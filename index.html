@@ -479,13 +479,14 @@
         <!-- Month Selector & View Toggle (Requirement 14) -->
         <div class="journal-top-bar">
           <select class="month-selector-select" id="journal-month-select">
+            <option value="all">All Dates / All Time</option>
             <option value="2026-11" selected>November 2026</option>
             <option value="2026-10">October 2026</option>
             <option value="2026-09">September 2026</option>
           </select>
           <div class="journal-view-toggle">
-            <button class="view-toggle-btn active" id="btn-toggle-entries">Notes</button>
-            <button class="view-toggle-btn" id="btn-toggle-gallery">Photos</button>
+            <button class="view-toggle-btn active" id="btn-toggle-entries">📖 Journal Catalog</button>
+            <button class="view-toggle-btn" id="btn-toggle-gallery">📷 Photo Gallery</button>
           </div>
         </div>
 
@@ -942,15 +943,61 @@
       </div>
     </div>
 
-    <!-- Image Lightbox Modal -->
+    <!-- Floating Panel: Full Journal Entry Viewer -->
+    <div class="modal-backdrop" id="modal-journal-entry">
+      <div class="modal-sheet journal-entry-panel">
+        <div class="sheet-handle"></div>
+        <div class="journal-panel-header">
+          <div class="journal-panel-title-row">
+            <div>
+              <div class="journal-panel-date" id="journal-panel-date">Thursday, Nov 5, 2026 • Day 5</div>
+              <div class="journal-panel-scripture" id="journal-panel-scripture">Colossians 3:12-17</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="journal-panel-comp-badge" class="stat-tag green">✓ Completed</span>
+              <button class="sheet-close-btn" id="btn-close-journal-panel">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="journal-panel-body" id="journal-panel-body">
+          <!-- Dynamically populated full SOAP sections or standard note, plus attached image -->
+        </div>
+
+        <div class="journal-panel-actions">
+          <button class="btn-primary" id="btn-journal-panel-goto" style="flex: 1; justify-content: center;">
+            <span>📖</span> Go to Devotion
+          </button>
+          <button class="tool-btn btn-danger-action" id="btn-journal-panel-delete" style="flex: 1; justify-content: center;">
+            <span>🗑️</span> Delete Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Floating Panel & Lightbox Modal -->
     <div class="modal-backdrop" id="modal-lightbox">
-      <div class="modal-sheet" style="padding: 16px; background: #000000;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <div style="color: #ffffff; font-weight: 700; font-size: 0.95rem;" id="lightbox-date">Devotion Image</div>
+      <div class="modal-sheet image-panel-sheet">
+        <div class="sheet-handle"></div>
+        <div class="image-panel-header">
+          <div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold-light);" id="lightbox-date">Devotion Image</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;" id="lightbox-scripture">Daily Devotion</div>
+          </div>
           <button class="sheet-close-btn" id="btn-close-lightbox">✕</button>
         </div>
-        <img id="lightbox-img" src="" alt="Devotion" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: var(--radius-md);">
-        <p id="lightbox-caption" style="color: #cbd5e1; font-size: 0.85rem; margin-top: 12px; line-height: 1.5;"></p>
+        <div class="image-panel-body">
+          <img id="lightbox-img" src="" alt="Devotion photo" class="image-panel-hero-img">
+          <div class="image-panel-meta" id="lightbox-caption" style="display: none;"></div>
+        </div>
+        <div class="image-panel-actions">
+          <button class="btn-primary" id="btn-lightbox-goto" style="flex: 1; justify-content: center;">
+            <span>📖</span> Go to Devotion
+          </button>
+          <button class="tool-btn btn-danger-action" id="btn-lightbox-delete" style="flex: 1; justify-content: center;">
+            <span>🗑️</span> Delete Photo
+          </button>
+        </div>
       </div>
     </div>
 

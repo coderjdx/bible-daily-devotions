@@ -286,6 +286,10 @@ class DevotionStore {
     return true;
   }
 
+  async deleteImage(dateStr) {
+    return this.removeImage(dateStr);
+  }
+
   async getAllImages() {
     try {
       const store = await this.getStore('images');

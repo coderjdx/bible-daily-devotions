@@ -288,6 +288,19 @@
     el.lightboxImg = document.getElementById('lightbox-img');
     el.lightboxDate = document.getElementById('lightbox-date');
     el.lightboxCaption = document.getElementById('lightbox-caption');
+    el.lightboxScripture = document.getElementById('lightbox-scripture');
+    el.btnLightboxGoto = document.getElementById('btn-lightbox-goto');
+    el.btnLightboxDelete = document.getElementById('btn-lightbox-delete');
+
+    // Journal Entry Floating Panel
+    el.modalJournalEntry = document.getElementById('modal-journal-entry');
+    el.btnCloseJournalPanel = document.getElementById('btn-close-journal-panel');
+    el.journalPanelDate = document.getElementById('journal-panel-date');
+    el.journalPanelScripture = document.getElementById('journal-panel-scripture');
+    el.journalPanelCompBadge = document.getElementById('journal-panel-comp-badge');
+    el.journalPanelBody = document.getElementById('journal-panel-body');
+    el.btnJournalPanelGoto = document.getElementById('btn-journal-panel-goto');
+    el.btnJournalPanelDelete = document.getElementById('btn-journal-panel-delete');
 
     // Confirmation Modal
     el.modalConfirm = document.getElementById('modal-confirm');
@@ -1091,13 +1104,105 @@
       showToast(`Alarm snoozed until ${until} ⏰`);
     });
 
-    // Lightbox modal close
-    el.btnCloseLightbox.addEventListener('click', () => {
-      el.modalLightbox.classList.remove('active');
-    });
-    el.modalLightbox.addEventListener('click', (e) => {
-      if (e.target === el.modalLightbox) {
-        el.modalLightbox.classList.remove('active');
+    // Lightbox modal close & actions
+    if (el.btnCloseLightbox) {
+      el.btnCloseLightbox.addEventListener('click', closeLightbox);
+    }
+    if (el.modalLightbox) {
+      el.modalLightbox.addEventListener('click', (e) => {
+        if (e.target === el.modalLightbox) {
+          closeLightbox();
+        }
+      });
+    }
+
+    if (el.btnLightboxGoto) {
+      el.btnLightboxGoto.addEventListener('click', () => {
+        if (!activeImageItem) return;
+        const targetDay = activeImageItem.day;
+        closeLightbox();
+        state.currentDay = targetDay;
+        switchView('devotion');
+      });
+    }
+
+    if (el.btnLightboxDelete) {
+      el.btnLightboxDelete.addEventListener('click', () => {
+        if (!activeImageItem) return;
+        const itemToDelete = activeImageItem;
+        showConfirmModal(
+          'Delete Devotion Photo?',
+          `Are you sure you want to permanently delete this photo from Day ${itemToDelete.day}?`,
+          '🗑️',
+          async () => {
+            await window.devotionStore.removeImage(itemToDelete.dateStr);
+            closeLightbox();
+            await renderJournal();
+            if (state.currentDay === itemToDelete.day) {
+              renderDevotion(itemToDelete.day);
+            }
+            showToast('Photo deleted 🗑️');
+          }
+        );
+      });
+    }
+
+    // Journal Entry Floating Panel close & actions
+    if (el.btnCloseJournalPanel) {
+      el.btnCloseJournalPanel.addEventListener('click', closeJournalEntryModal);
+    }
+    if (el.modalJournalEntry) {
+      el.modalJournalEntry.addEventListener('click', (e) => {
+        if (e.target === el.modalJournalEntry) {
+          closeJournalEntryModal();
+        }
+      });
+    }
+
+    if (el.btnJournalPanelGoto) {
+      el.btnJournalPanelGoto.addEventListener('click', () => {
+        if (!activeJournalItem) return;
+        const targetDay = activeJournalItem.day;
+        closeJournalEntryModal();
+        state.currentDay = targetDay;
+        switchView('devotion');
+      });
+    }
+
+    if (el.btnJournalPanelDelete) {
+      el.btnJournalPanelDelete.addEventListener('click', () => {
+        if (!activeJournalItem) return;
+        const itemToDelete = activeJournalItem;
+        showConfirmModal(
+          'Delete Journal Entry?',
+          `Are you sure you want to permanently delete your journal entry for Day ${itemToDelete.day}? This action cannot be undone.`,
+          '🗑️',
+          async () => {
+            await window.devotionStore.deleteNote(itemToDelete.dateStr);
+            if (itemToDelete.img) {
+              await window.devotionStore.removeImage(itemToDelete.dateStr);
+            }
+            closeJournalEntryModal();
+            await renderJournal();
+            if (state.currentDay === itemToDelete.day) {
+              renderDevotion(itemToDelete.day);
+            }
+            showToast('Journal entry deleted 🗑️');
+          }
+        );
+      });
+    }
+
+    // Global keyboard Escape key to close modals
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (el.modalJournalEntry && el.modalJournalEntry.classList.contains('active')) {
+          closeJournalEntryModal();
+        } else if (el.modalLightbox && el.modalLightbox.classList.contains('active')) {
+          closeLightbox();
+        } else if (el.modalConfirm && el.modalConfirm.classList.contains('active')) {
+          closeConfirmModal();
+        }
       }
     });
   }
@@ -1863,17 +1968,20 @@
   }
 
   // --- View 4: Journal Page (Requirement 14) ---
+  let activeJournalItem = null;
+  let activeImageItem = null;
+
+  function parseDateParts(dateStr) {
+    const parts = (dateStr || '').split('-');
+    const y = parseInt(parts[0], 10) || 2026;
+    const m = parseInt(parts[1], 10) || 11;
+    const d = parseInt(parts[2], 10) || 1;
+    const dateObj = new Date(y, m - 1, d);
+    return { year: y, month: m, day: d, dateObj };
+  }
+
   async function renderJournal() {
-    const selectedMonth = state.selectedJournalMonth; // e.g. "2026-11"
-    if (el.journalEntriesList) {
-      el.journalEntriesList.innerHTML = `
-        <div class="empty-state-box">
-          <div class="empty-state-icon">✍️</div>
-          <p>No journal entries or notes for ${selectedMonth} yet.</p>
-          <p style="font-size: 0.8rem; margin-top: 6px;">Start reading today's devotion to write notes and attach photos!</p>
-        </div>
-      `;
-    }
+    const selectedMonth = state.selectedJournalMonth; // e.g. "2026-11" or "all"
 
     const allNotes = await window.devotionStore.getAllNotes();
     const allImages = await window.devotionStore.getAllImages();
@@ -1885,171 +1993,321 @@
     const completionsMap = new Map(allCompletions.map(c => [c.date, c]));
 
     if (state.journalTab === 'entries') {
-      renderJournalEntriesList(selectedMonth, notesMap, imagesMap, completionsMap);
+      renderJournalEntriesList(selectedMonth, notesMap, imagesMap, completionsMap, allNotes, allImages);
     } else {
-      renderJournalGallery(selectedMonth, imagesMap);
+      renderJournalGallery(selectedMonth, imagesMap, notesMap, allImages);
     }
   }
 
-  function renderJournalEntriesList(monthStr, notesMap, imagesMap, completionsMap) {
+  function renderJournalEntriesList(monthStr, notesMap, imagesMap, completionsMap, allNotes, allImages) {
     el.journalEntriesList.innerHTML = '';
 
-    // Collect days that belong to the month
+    // Collect all candidate dates
+    const dateSet = new Set();
+    if (monthStr === 'all') {
+      allNotes.forEach(n => dateSet.add(n.date));
+      allImages.forEach(img => dateSet.add(img.date));
+    } else {
+      // Days of selected month
+      const [yStr, mStr] = monthStr.split('-');
+      const y = parseInt(yStr, 10);
+      const m = parseInt(mStr, 10);
+      const daysInMonth = (m === 2) ? 28 : (([4, 6, 9, 11].includes(m)) ? 30 : 31);
+      for (let d = 1; d <= daysInMonth; d++) {
+        dateSet.add(`${monthStr}-${String(d).padStart(2, '0')}`);
+      }
+      // Also add any stored note/image starting with this month prefix
+      allNotes.forEach(n => { if (n.date && n.date.startsWith(monthStr)) dateSet.add(n.date); });
+      allImages.forEach(img => { if (img.date && img.date.startsWith(monthStr)) dateSet.add(img.date); });
+    }
+
     const entries = [];
-    for (let d = 1; d <= 30; d++) {
-      const dStr = `${monthStr}-${String(d).padStart(2, '0')}`;
+    dateSet.forEach(dStr => {
+      const { day, dateObj } = parseDateParts(dStr);
       const note = notesMap.get(dStr);
       const img = imagesMap.get(dStr);
       const comp = completionsMap.get(dStr);
-      const sched = window.bibleService.getDaySchedule(d);
+      const sched = window.bibleService.getDaySchedule(day);
 
       // Check if note has actual content (ignore auto-filled Scripture-only notes)
       let hasValidNote = false;
+      let parsedNote = null;
       if (note && note.trim()) {
-        const parsed = parseNoteData(note, sched ? sched.scriptures : '');
-        if (parsed.format === 'soap') {
+        parsedNote = parseNoteData(note, sched ? sched.scriptures : '');
+        if (parsedNote.format === 'soap') {
           hasValidNote = Boolean(
-            (parsed.observation && parsed.observation.trim()) ||
-            (parsed.application && parsed.application.trim()) ||
-            (parsed.prayer && parsed.prayer.trim())
+            (parsedNote.observation && parsedNote.observation.trim()) ||
+            (parsedNote.application && parsedNote.application.trim()) ||
+            (parsedNote.prayer && parsedNote.prayer.trim())
           );
         } else {
-          hasValidNote = Boolean(parsed.text && parsed.text.trim());
+          hasValidNote = Boolean(parsedNote.text && parsedNote.text.trim());
         }
       }
 
-      if (hasValidNote || img || comp) {
-        entries.push({ day: d, dateStr: dStr, note: hasValidNote ? note : null, img, comp, sched });
+      if (hasValidNote || img) {
+        entries.push({ day, dateStr: dStr, dateObj, note: hasValidNote ? note : null, parsedNote, img, comp, sched });
       }
-    }
+    });
 
     if (entries.length === 0) {
       el.journalEntriesList.innerHTML = `
-        <div class="empty-state-box">
+        <div class="empty-state-box" style="grid-column: 1 / -1;">
           <div class="empty-state-icon">✍️</div>
-          <p>No journal entries or notes for ${monthStr} yet.</p>
+          <p>No journal entries found ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.</p>
           <p style="font-size: 0.8rem; margin-top: 6px;">Start reading today's devotion to write notes and attach photos!</p>
         </div>
       `;
       return;
     }
 
-    // Sort descending by day
-    entries.sort((a, b) => b.day - a.day);
+    // Sort descending by dateStr
+    entries.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 
     entries.forEach(item => {
       const card = document.createElement('div');
       card.className = 'journal-entry-card';
 
-      const dateObj = new Date(2026, 10, item.day);
-      const dateText = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const dateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const scriptureTitle = item.sched ? item.sched.scriptures : 'Daily Devotion';
 
       let cardHtml = `
         <div class="entry-card-top">
           <span class="entry-date-badge">📅 ${dateText} • Day ${item.day}</span>
-          ${item.comp ? '<span class="stat-tag green">✓ Completed</span>' : '<span class="stat-tag red">Incomplete</span>'}
+          ${item.comp ? '<span class="stat-tag green">✓ Completed</span>' : '<span class="stat-tag">Incomplete</span>'}
         </div>
-        <div class="entry-scriptures-title">${item.sched ? item.sched.scriptures : 'Devotion'}</div>
+        <div class="entry-scriptures-title">${escapeHtml(scriptureTitle)}</div>
       `;
 
-      if (item.note && item.note.trim()) {
-        const parsedNote = parseNoteData(item.note, item.sched ? item.sched.scriptures : '');
-        if (parsedNote.format === 'soap') {
-          const hasContent = parsedNote.observation || parsedNote.application || parsedNote.prayer;
+      if (item.parsedNote) {
+        if (item.parsedNote.format === 'soap') {
           cardHtml += `
             <div class="soap-entry-card-content">
               <div class="soap-tag-pill">S.O.A.P. Journal Reflection</div>
-              <div class="soap-preview-row">
-                <span class="soap-preview-badge soap-letter-s">S</span>
-                <div class="soap-preview-body"><strong>Scripture:</strong> ${escapeHtml(parsedNote.scripture || (item.sched ? item.sched.scriptures : ''))}</div>
-              </div>
-              ${parsedNote.observation ? `
+              ${item.parsedNote.observation ? `
               <div class="soap-preview-row">
                 <span class="soap-preview-badge soap-letter-o">O</span>
-                <div class="soap-preview-body"><strong>Observation:</strong> ${escapeHtml(parsedNote.observation)}</div>
+                <div class="soap-preview-body"><strong>Observation:</strong> ${escapeHtml(item.parsedNote.observation)}</div>
               </div>` : ''}
-              ${parsedNote.application ? `
+              ${item.parsedNote.application ? `
               <div class="soap-preview-row">
                 <span class="soap-preview-badge soap-letter-a">A</span>
-                <div class="soap-preview-body"><strong>Application:</strong> ${escapeHtml(parsedNote.application)}</div>
+                <div class="soap-preview-body"><strong>Application:</strong> ${escapeHtml(item.parsedNote.application)}</div>
               </div>` : ''}
-              ${parsedNote.prayer ? `
+              ${item.parsedNote.prayer ? `
               <div class="soap-preview-row">
                 <span class="soap-preview-badge soap-letter-p">P</span>
-                <div class="soap-preview-body"><strong>Prayer:</strong> ${escapeHtml(parsedNote.prayer)}</div>
+                <div class="soap-preview-body"><strong>Prayer:</strong> ${escapeHtml(item.parsedNote.prayer)}</div>
               </div>` : ''}
-              ${!hasContent ? `<div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 2px;">No reflection written yet.</div>` : ''}
             </div>
           `;
         } else {
-          cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.note.trim())}”</div>`;
+          cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.parsedNote.text.trim())}”</div>`;
         }
-      } else {
-        cardHtml += `<div class="entry-note-preview" style="font-style: italic; color: var(--text-muted);">No written notes for this day.</div>`;
       }
 
       if (item.img && item.img.dataUrl) {
-        cardHtml += `<img src="${item.img.dataUrl}" alt="Devotion photo" class="entry-thumbnail">`;
+        cardHtml += `
+          <div style="position: relative;">
+            <img src="${item.img.dataUrl}" alt="Devotion photo" class="entry-thumbnail">
+            <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 Attached</span>
+          </div>
+        `;
       }
+
+      cardHtml += `
+        <div class="entry-card-footer">
+          <span class="entry-card-action-hint">Open full entry ↗</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">${item.parsedNote ? (item.parsedNote.format === 'soap' ? 'S.O.A.P.' : 'Reflection') : 'Photo'}</span>
+        </div>
+      `;
 
       card.innerHTML = cardHtml;
 
       card.addEventListener('click', () => {
-        state.currentDay = item.day;
-        switchView('devotion');
+        openJournalEntryPanel(item);
       });
 
       el.journalEntriesList.appendChild(card);
     });
   }
 
-  function renderJournalGallery(monthStr, imagesMap) {
+  function renderJournalGallery(monthStr, imagesMap, notesMap, allImages) {
     el.journalGalleryGrid.innerHTML = '';
 
     const photos = [];
-    for (let d = 1; d <= 30; d++) {
-      const dStr = `${monthStr}-${String(d).padStart(2, '0')}`;
-      const img = imagesMap.get(dStr);
-      if (img && img.dataUrl) {
-        const sched = window.bibleService.getDaySchedule(d);
-        photos.push({ day: d, dateStr: dStr, img, sched });
-      }
-    }
+    const sourceImages = (monthStr === 'all')
+      ? allImages
+      : allImages.filter(img => img.date && img.date.startsWith(monthStr));
+
+    sourceImages.forEach(img => {
+      const { day, dateObj } = parseDateParts(img.date);
+      const sched = window.bibleService.getDaySchedule(day);
+      const note = notesMap.get(img.date);
+      photos.push({ day, dateStr: img.date, dateObj, img, sched, note });
+    });
 
     if (photos.length === 0) {
       el.journalGalleryGrid.innerHTML = `
-        <div class="empty-state-box" style="grid-column: span 2;">
+        <div class="empty-state-box" style="grid-column: 1 / -1;">
           <div class="empty-state-icon">📷</div>
-          <p>No photos uploaded for ${monthStr} yet.</p>
-          <p style="font-size: 0.8rem; margin-top: 6px;">Tap "+ Add Photo" in your daily devotion to save images here.</p>
+          <p>No photos uploaded ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.</p>
+          <p style="font-size: 0.8rem; margin-top: 6px;">Tap "+ Add Photo" in your daily devotion to attach photos and build your visual gallery!</p>
         </div>
       `;
       return;
     }
 
-    photos.sort((a, b) => b.day - a.day);
+    // Sort descending by dateStr
+    photos.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 
     photos.forEach(item => {
       const tile = document.createElement('div');
       tile.className = 'gallery-tile';
+
+      const dateText = item.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const bookTitle = item.sched ? item.sched.passages[0].bookName : 'Devotion';
+
       tile.innerHTML = `
-        <img src="${item.img.dataUrl}" alt="Devotion image for Day ${item.day}">
-        <div class="gallery-tile-caption">Day ${item.day} • ${item.sched ? item.sched.passages[0].bookName : 'Devotion'}</div>
+        <img src="${item.img.dataUrl}" alt="Devotion photo for Day ${item.day}">
+        <div class="gallery-tile-caption">
+          <span class="gallery-tile-date">📅 ${dateText} • Day ${item.day}</span>
+          <span class="gallery-tile-scripture">${escapeHtml(bookTitle)}</span>
+        </div>
       `;
 
       tile.addEventListener('click', () => {
-        openLightbox(item.img.dataUrl, `Day ${item.day} - November ${item.day}, 2026`, item.sched ? item.sched.scriptures : '');
+        openImageDetailPanel(item);
       });
 
       el.journalGalleryGrid.appendChild(tile);
     });
   }
 
-  function openLightbox(src, title, caption) {
-    el.lightboxImg.src = src;
-    el.lightboxDate.textContent = title;
-    el.lightboxCaption.textContent = caption;
+  function openJournalEntryPanel(item) {
+    activeJournalItem = item;
+    const fullDateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+
+    el.journalPanelDate.textContent = `📅 Day ${item.day} • ${fullDateText}`;
+    el.journalPanelScripture.textContent = item.sched ? item.sched.scriptures : 'Daily Devotion';
+
+    if (item.comp) {
+      el.journalPanelCompBadge.className = 'stat-tag green';
+      el.journalPanelCompBadge.textContent = '✓ Completed';
+      el.journalPanelCompBadge.style.display = 'inline-block';
+    } else {
+      el.journalPanelCompBadge.className = 'stat-tag';
+      el.journalPanelCompBadge.textContent = 'Incomplete';
+      el.journalPanelCompBadge.style.display = 'inline-block';
+    }
+
+    let bodyHtml = '';
+
+    if (item.parsedNote) {
+      if (item.parsedNote.format === 'soap') {
+        const scripText = item.parsedNote.scripture || (item.sched ? item.sched.scriptures : '');
+        bodyHtml += `
+          <div class="soap-panel-section soap-panel-s">
+            <div class="soap-section-badge"><span class="soap-letter-badge soap-letter-s">S</span> Scripture Reference</div>
+            <div class="soap-section-content">${escapeHtml(scripText)}</div>
+          </div>
+          <div class="soap-panel-section soap-panel-o">
+            <div class="soap-section-badge"><span class="soap-letter-badge soap-letter-o">O</span> Observation</div>
+            <div class="soap-section-content">${item.parsedNote.observation ? escapeHtml(item.parsedNote.observation) : '<em style="color: var(--text-muted);">No observation recorded.</em>'}</div>
+          </div>
+          <div class="soap-panel-section soap-panel-a">
+            <div class="soap-section-badge"><span class="soap-letter-badge soap-letter-a">A</span> Application</div>
+            <div class="soap-section-content">${item.parsedNote.application ? escapeHtml(item.parsedNote.application) : '<em style="color: var(--text-muted);">No application recorded.</em>'}</div>
+          </div>
+          <div class="soap-panel-section soap-panel-p">
+            <div class="soap-section-badge"><span class="soap-letter-badge soap-letter-p">P</span> Prayer</div>
+            <div class="soap-section-content">${item.parsedNote.prayer ? escapeHtml(item.parsedNote.prayer) : '<em style="color: var(--text-muted);">No prayer recorded.</em>'}</div>
+          </div>
+        `;
+      } else {
+        bodyHtml += `
+          <div class="standard-panel-section">
+            <div class="soap-section-badge">✍️ Personal Reflection & Notes</div>
+            <div class="standard-section-content">${escapeHtml(item.parsedNote.text)}</div>
+          </div>
+        `;
+      }
+    } else {
+      bodyHtml += `
+        <div class="standard-panel-section">
+          <div class="soap-section-badge">✍️ Personal Reflection</div>
+          <div class="standard-section-content" style="color: var(--text-muted); font-style: italic;">No written notes recorded for this day.</div>
+        </div>
+      `;
+    }
+
+    if (item.img && item.img.dataUrl) {
+      bodyHtml += `
+        <div class="panel-attached-photo-wrap">
+          <div class="soap-section-badge">📷 Attached Devotional Photo</div>
+          <img src="${item.img.dataUrl}" alt="Devotion photo" class="panel-attached-img" id="panel-attached-img" title="Click to inspect full photo">
+        </div>
+      `;
+    }
+
+    el.journalPanelBody.innerHTML = bodyHtml;
+
+    // Click photo to open full image detail modal
+    const panelImg = el.journalPanelBody.querySelector('#panel-attached-img');
+    if (panelImg) {
+      panelImg.addEventListener('click', () => {
+        closeJournalEntryModal();
+        openImageDetailPanel(item);
+      });
+    }
+
+    el.modalJournalEntry.classList.add('active');
+  }
+
+  function closeJournalEntryModal() {
+    activeJournalItem = null;
+    if (el.modalJournalEntry) {
+      el.modalJournalEntry.classList.remove('active');
+    }
+  }
+
+  function openImageDetailPanel(item) {
+    activeImageItem = item;
+    const fullDateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+
+    el.lightboxImg.src = item.img.dataUrl;
+    el.lightboxDate.textContent = `📅 Day ${item.day} • ${fullDateText}`;
+    if (el.lightboxScripture) {
+      el.lightboxScripture.textContent = item.sched ? item.sched.scriptures : 'Daily Devotion';
+    }
+
+    // Show note snippet if available
+    if (item.note && item.note.trim()) {
+      const parsed = parseNoteData(item.note, item.sched ? item.sched.scriptures : '');
+      let snippet = '';
+      if (parsed.format === 'soap') {
+        snippet = parsed.observation || parsed.application || parsed.prayer || '';
+      } else {
+        snippet = parsed.text || '';
+      }
+      if (snippet && snippet.trim()) {
+        el.lightboxCaption.innerHTML = `<span style="font-weight: 700; color: var(--accent-gold-light);">Reflection:</span> “${escapeHtml(snippet.slice(0, 160))}${snippet.length > 160 ? '...' : ''}”`;
+        el.lightboxCaption.style.display = 'block';
+      } else {
+        el.lightboxCaption.style.display = 'none';
+      }
+    } else {
+      el.lightboxCaption.style.display = 'none';
+    }
+
     el.modalLightbox.classList.add('active');
+  }
+
+  function closeLightbox() {
+    activeImageItem = null;
+    if (el.modalLightbox) {
+      el.modalLightbox.classList.remove('active');
+    }
   }
 
   // --- Confirmation Modal Helpers ---
