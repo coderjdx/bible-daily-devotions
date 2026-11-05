@@ -54,6 +54,7 @@
 
     // Load SOAP format preference
     state.soapFormatEnabled = window.devotionStore ? !!window.devotionStore.getSetting('soap_format', false) : false;
+    applySoapModeUI();
     
     bindEvents();
     setupAlarmCallbacks();
@@ -177,7 +178,10 @@
     el.devotionImagePreviewContainer = document.getElementById('devotion-image-preview-container');
     el.btnRemoveImage = document.getElementById('btn-remove-image');
 
-    // Completion
+    // Completion & Study Column
+    el.viewDevotion = document.getElementById('view-devotion');
+    el.devotionStudyCol = document.querySelector('.devotion-study-col');
+    el.devotionCompleteSection = document.getElementById('devotion-complete-section');
     el.btnMarkComplete = document.getElementById('btn-mark-complete');
     el.completedBadgeCard = document.getElementById('completed-badge-card');
     el.completedTimestampText = document.getElementById('completed-timestamp-text');
@@ -454,6 +458,17 @@
     }
     if (el.settingSoapToggle) {
       el.settingSoapToggle.checked = isSoap;
+    }
+
+    // Adjust Mark Day as Complete button so it never covers the Prayer section
+    if (el.devotionCompleteSection) {
+      el.devotionCompleteSection.classList.toggle('soap-active', isSoap);
+    }
+    if (el.devotionStudyCol) {
+      el.devotionStudyCol.classList.toggle('soap-active', isSoap);
+    }
+    if (el.viewDevotion) {
+      el.viewDevotion.classList.toggle('soap-active', isSoap);
     }
   }
 
