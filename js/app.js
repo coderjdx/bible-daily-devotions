@@ -345,6 +345,17 @@
   }
 
   // --- Theme Management ---
+  function updateThemeMeta(theme) {
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'dark' ? '#0F172A' : '#FFFFFF');
+    }
+    if (el.settingsThemeIcon && el.settingsThemeLabel) {
+      el.settingsThemeIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
+      el.settingsThemeLabel.textContent = theme === 'dark' ? 'Dark Midnight' : 'Clean Light';
+    }
+  }
+
   function initTheme() {
     const savedTheme = window.devotionStore.getSetting('theme', 'dark');
     state.theme = savedTheme;
@@ -352,6 +363,7 @@
     if (el.btnThemeToggle) {
       el.btnThemeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
     }
+    updateThemeMeta(savedTheme);
   }
 
   function toggleTheme() {
@@ -361,7 +373,8 @@
     if (el.btnThemeToggle) {
       el.btnThemeToggle.textContent = state.theme === 'dark' ? '🌙' : '☀️';
     }
-    showToast(`Switched to ${state.theme} theme`);
+    updateThemeMeta(state.theme);
+    showToast(`Switched to ${state.theme === 'dark' ? 'Dark Midnight' : 'Clean Light'} theme`);
   }
 
   // --- Navigation & Views ---
