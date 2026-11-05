@@ -17,7 +17,8 @@
     fontFamily: 'serif',         // 'serif', 'sans'
     theme: 'dark',
     journalTab: 'entries',       // 'entries', 'gallery'
-    selectedJournalMonth: '2026-11'
+    selectedJournalMonth: '2026-11',
+    soapFormatEnabled: false
   };
 
   // DOM Elements cache
@@ -50,6 +51,9 @@
 
     // Initialize services
     await window.bibleService.init();
+
+    // Load SOAP format preference
+    state.soapFormatEnabled = window.devotionStore ? !!window.devotionStore.getSetting('soap_format', false) : false;
     
     bindEvents();
     setupAlarmCallbacks();
@@ -160,6 +164,14 @@
     // Notes & Image
     el.devotionNotesInput = document.getElementById('devotion-notes-input');
     el.notesSaveBadge = document.getElementById('notes-save-badge');
+    el.devotionNotesHeaderText = document.getElementById('devotion-notes-header-text');
+    el.btnToggleSoapDevotion = document.getElementById('btn-toggle-soap-devotion');
+    el.notesStandardWrap = document.getElementById('notes-standard-wrap');
+    el.notesSoapWrap = document.getElementById('notes-soap-wrap');
+    el.soapScriptureInput = document.getElementById('soap-scripture-input');
+    el.soapObservationInput = document.getElementById('soap-observation-input');
+    el.soapApplicationInput = document.getElementById('soap-application-input');
+    el.soapPrayerInput = document.getElementById('soap-prayer-input');
     el.devotionImageFile = document.getElementById('devotion-image-file');
     el.devotionImagePreview = document.getElementById('devotion-image-preview');
     el.devotionImagePreviewContainer = document.getElementById('devotion-image-preview-container');
@@ -240,6 +252,7 @@
     el.btnScopeCancel = document.getElementById('btn-scope-cancel');
 
     // Settings View - Preferences
+    el.settingSoapToggle = document.getElementById('setting-soap-toggle');
     el.settingVersionDropdown = document.getElementById('setting-version-dropdown');
     el.settingFontFamily = document.getElementById('setting-font-family');
     el.btnSettingsThemeToggle = document.getElementById('btn-settings-theme-toggle');
@@ -361,6 +374,139 @@
     }
   }
 
+  // --- S.O.A.P. Journal Format Helpers ---
+  function parseNoteData(rawNote, defaultScripture = '') {
+    if (!rawNote) {
+      return {
+        format: state.soapFormatEnabled ? 'soap' : 'standard',
+        scripture: defaultScripture || '',
+        observation: '',
+        application: '',
+        prayer: '',
+        text: ''
+      };
+    }
+    if (typeof rawNote === 'string') {
+      try {
+        const parsed = JSON.parse(rawNote);
+        if (parsed && typeof parsed === 'object' && (parsed.format === 'soap' || ('scripture' in parsed && 'observation' in parsed))) {
+          const scripture = (parsed.scripture && parsed.scripture.trim()) ? parsed.scripture : (defaultScripture || '');
+          return {
+            format: 'soap',
+            scripture,
+            observation: parsed.observation || '',
+            application: parsed.application || '',
+            prayer: parsed.prayer || '',
+            text: formatSoapAsText({ ...parsed, scripture })
+          };
+        }
+      } catch (e) {
+        // Plain text note
+      }
+      return {
+        format: 'standard',
+        scripture: defaultScripture || '',
+        observation: rawNote, // Allow observation to receive prior standard note on conversion
+        application: '',
+        prayer: '',
+        text: rawNote
+      };
+    }
+    return {
+      format: 'standard',
+      scripture: defaultScripture || '',
+      observation: '',
+      application: '',
+      prayer: '',
+      text: ''
+    };
+  }
+
+  function formatSoapAsText(soap) {
+    const parts = [];
+    if (soap.scripture) parts.push(`[SCRIPTURE]\n${soap.scripture}`);
+    if (soap.observation) parts.push(`[OBSERVATION]\n${soap.observation}`);
+    if (soap.application) parts.push(`[APPLICATION]\n${soap.application}`);
+    if (soap.prayer) parts.push(`[PRAYER]\n${soap.prayer}`);
+    return parts.join('\n\n');
+  }
+
+  function applySoapModeUI() {
+    const isSoap = !!state.soapFormatEnabled;
+    if (el.notesSoapWrap) el.notesSoapWrap.style.display = isSoap ? 'block' : 'none';
+    if (el.notesStandardWrap) el.notesStandardWrap.style.display = isSoap ? 'none' : 'block';
+    if (el.btnToggleSoapDevotion) {
+      el.btnToggleSoapDevotion.textContent = isSoap ? 'SOAP: On' : 'SOAP: Off';
+      if (isSoap) {
+        el.btnToggleSoapDevotion.classList.add('active');
+        el.btnToggleSoapDevotion.style.background = 'rgba(217, 119, 6, 0.25)';
+        el.btnToggleSoapDevotion.style.borderColor = 'var(--accent-gold)';
+        el.btnToggleSoapDevotion.style.color = 'var(--accent-gold)';
+      } else {
+        el.btnToggleSoapDevotion.classList.remove('active');
+        el.btnToggleSoapDevotion.style.background = '';
+        el.btnToggleSoapDevotion.style.borderColor = '';
+        el.btnToggleSoapDevotion.style.color = '';
+      }
+    }
+    if (el.devotionNotesHeaderText) {
+      el.devotionNotesHeaderText.textContent = isSoap ? 'S.O.A.P. Devotion Journal' : 'My Notes & Reflection';
+    }
+    if (el.settingSoapToggle) {
+      el.settingSoapToggle.checked = isSoap;
+    }
+  }
+
+  function setSoapFormatEnabled(enabled) {
+    state.soapFormatEnabled = !!enabled;
+    if (window.devotionStore) {
+      window.devotionStore.setSetting('soap_format', state.soapFormatEnabled);
+    }
+    applySoapModeUI();
+
+    // If on Devotion view, re-sync values so user sees their content seamlessly
+    if (state.activeView === 'devotion') {
+      const sched = window.bibleService.getDaySchedule(state.currentDay);
+      const defaultScripture = sched ? sched.scriptures : '';
+
+      if (state.soapFormatEnabled) {
+        // Switching to SOAP
+        if (el.soapScriptureInput && (!el.soapScriptureInput.value || !el.soapScriptureInput.value.trim()) && defaultScripture) {
+          el.soapScriptureInput.value = defaultScripture;
+        }
+        if (el.soapObservationInput && !el.soapObservationInput.value && el.devotionNotesInput && el.devotionNotesInput.value) {
+          try {
+            const parsed = JSON.parse(el.devotionNotesInput.value);
+            if (parsed && parsed.format === 'soap') {
+              el.soapScriptureInput.value = parsed.scripture || defaultScripture;
+              el.soapObservationInput.value = parsed.observation || '';
+              el.soapApplicationInput.value = parsed.application || '';
+              el.soapPrayerInput.value = parsed.prayer || '';
+            } else {
+              el.soapObservationInput.value = el.devotionNotesInput.value;
+            }
+          } catch {
+            el.soapObservationInput.value = el.devotionNotesInput.value;
+          }
+        }
+      } else {
+        // Switching to Standard
+        if (el.devotionNotesInput) {
+          const currentSoap = {
+            format: 'soap',
+            scripture: el.soapScriptureInput ? el.soapScriptureInput.value : '',
+            observation: el.soapObservationInput ? el.soapObservationInput.value : '',
+            application: el.soapApplicationInput ? el.soapApplicationInput.value : '',
+            prayer: el.soapPrayerInput ? el.soapPrayerInput.value : ''
+          };
+          if (currentSoap.observation || currentSoap.application || currentSoap.prayer) {
+            el.devotionNotesInput.value = formatSoapAsText(currentSoap);
+          }
+        }
+      }
+    }
+  }
+
   // --- Event Bindings ---
   function bindEvents() {
     // Navigation bar
@@ -426,15 +572,54 @@
 
     // Notes auto-save with debounce
     let noteSaveTimeout = null;
-    el.devotionNotesInput.addEventListener('input', () => {
-      el.notesSaveBadge.innerHTML = '⏳ Saving...';
+    function triggerNotesSave(isSoap) {
+      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '⏳ Saving...';
       clearTimeout(noteSaveTimeout);
       noteSaveTimeout = setTimeout(async () => {
         const dateStr = getDayDateStr(state.currentDay);
-        await window.devotionStore.saveNote(dateStr, el.devotionNotesInput.value);
-        el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
+        if (isSoap) {
+          const sched = window.bibleService.getDaySchedule(state.currentDay);
+          const defaultScripture = sched ? sched.scriptures : '';
+          const scriptureVal = (el.soapScriptureInput && el.soapScriptureInput.value.trim()) ? el.soapScriptureInput.value : defaultScripture;
+          const soapObj = {
+            format: 'soap',
+            scripture: scriptureVal,
+            observation: el.soapObservationInput ? el.soapObservationInput.value : '',
+            application: el.soapApplicationInput ? el.soapApplicationInput.value : '',
+            prayer: el.soapPrayerInput ? el.soapPrayerInput.value : ''
+          };
+          await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj));
+        } else {
+          await window.devotionStore.saveNote(dateStr, el.devotionNotesInput ? el.devotionNotesInput.value : '');
+        }
+        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
       }, 500);
+    }
+
+    if (el.devotionNotesInput) {
+      el.devotionNotesInput.addEventListener('input', () => triggerNotesSave(false));
+    }
+
+    [el.soapScriptureInput, el.soapObservationInput, el.soapApplicationInput, el.soapPrayerInput].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('input', () => triggerNotesSave(true));
+      }
     });
+
+    if (el.btnToggleSoapDevotion) {
+      el.btnToggleSoapDevotion.addEventListener('click', () => {
+        setSoapFormatEnabled(!state.soapFormatEnabled);
+        showToast(state.soapFormatEnabled ? 'SOAP Journal format enabled' : 'Standard notes format enabled');
+        triggerNotesSave(state.soapFormatEnabled);
+      });
+    }
+
+    if (el.settingSoapToggle) {
+      el.settingSoapToggle.addEventListener('change', () => {
+        setSoapFormatEnabled(el.settingSoapToggle.checked);
+        showToast(state.soapFormatEnabled ? 'SOAP Journal format enabled' : 'Standard notes format enabled');
+      });
+    }
 
     // Image Upload
     el.devotionImageFile.addEventListener('change', handleImageUpload);
@@ -1185,9 +1370,26 @@
     }
 
     // Load Saved Notes & Image for this day
+    applySoapModeUI();
     const savedNote = await window.devotionStore.getNote(dateStr);
-    el.devotionNotesInput.value = savedNote || '';
-    el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
+    const daySchedForNote = window.bibleService.getDaySchedule(dayNum);
+    const defaultScripture = daySchedForNote ? daySchedForNote.scriptures : '';
+    const parsedNote = parseNoteData(savedNote, defaultScripture);
+
+    if (parsedNote.format === 'soap') {
+      if (el.soapScriptureInput) el.soapScriptureInput.value = (parsedNote.scripture && parsedNote.scripture.trim()) || defaultScripture;
+      if (el.soapObservationInput) el.soapObservationInput.value = parsedNote.observation || '';
+      if (el.soapApplicationInput) el.soapApplicationInput.value = parsedNote.application || '';
+      if (el.soapPrayerInput) el.soapPrayerInput.value = parsedNote.prayer || '';
+      if (el.devotionNotesInput) el.devotionNotesInput.value = formatSoapAsText(parsedNote);
+    } else {
+      if (el.devotionNotesInput) el.devotionNotesInput.value = parsedNote.text || '';
+      if (el.soapScriptureInput) el.soapScriptureInput.value = defaultScripture;
+      if (el.soapObservationInput) el.soapObservationInput.value = parsedNote.text || '';
+      if (el.soapApplicationInput) el.soapApplicationInput.value = '';
+      if (el.soapPrayerInput) el.soapPrayerInput.value = '';
+    }
+    if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
 
     const savedImg = await window.devotionStore.getImage(dateStr);
     if (savedImg && savedImg.dataUrl) {
@@ -1639,7 +1841,37 @@
       `;
 
       if (item.note && item.note.trim()) {
-        cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.note.trim())}”</div>`;
+        const parsedNote = parseNoteData(item.note, item.sched ? item.sched.scriptures : '');
+        if (parsedNote.format === 'soap') {
+          const hasContent = parsedNote.observation || parsedNote.application || parsedNote.prayer;
+          cardHtml += `
+            <div class="soap-entry-card-content">
+              <div class="soap-tag-pill">S.O.A.P. Journal Reflection</div>
+              <div class="soap-preview-row">
+                <span class="soap-preview-badge soap-letter-s">S</span>
+                <div class="soap-preview-body"><strong>Scripture:</strong> ${escapeHtml(parsedNote.scripture || (item.sched ? item.sched.scriptures : ''))}</div>
+              </div>
+              ${parsedNote.observation ? `
+              <div class="soap-preview-row">
+                <span class="soap-preview-badge soap-letter-o">O</span>
+                <div class="soap-preview-body"><strong>Observation:</strong> ${escapeHtml(parsedNote.observation)}</div>
+              </div>` : ''}
+              ${parsedNote.application ? `
+              <div class="soap-preview-row">
+                <span class="soap-preview-badge soap-letter-a">A</span>
+                <div class="soap-preview-body"><strong>Application:</strong> ${escapeHtml(parsedNote.application)}</div>
+              </div>` : ''}
+              ${parsedNote.prayer ? `
+              <div class="soap-preview-row">
+                <span class="soap-preview-badge soap-letter-p">P</span>
+                <div class="soap-preview-body"><strong>Prayer:</strong> ${escapeHtml(parsedNote.prayer)}</div>
+              </div>` : ''}
+              ${!hasContent ? `<div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 2px;">No reflection written yet.</div>` : ''}
+            </div>
+          `;
+        } else {
+          cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.note.trim())}”</div>`;
+        }
       } else {
         cardHtml += `<div class="entry-note-preview" style="font-style: italic; color: var(--text-muted);">No written notes for this day.</div>`;
       }
@@ -1785,6 +2017,9 @@
     }
 
     // Reading & App Preferences
+    if (el.settingSoapToggle) {
+      el.settingSoapToggle.checked = !!state.soapFormatEnabled;
+    }
     if (el.settingVersionDropdown) {
       el.settingVersionDropdown.value = window.bibleService.activeTranslation;
     }

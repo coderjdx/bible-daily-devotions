@@ -263,16 +263,88 @@
             <div class="devotion-notes-section">
               <div class="notes-header">
                 <div class="notes-title">
-                  <span>✍️</span> My Notes & Reflection
+                  <span>✍️</span> <span id="devotion-notes-header-text">My Notes & Reflection</span>
+                  <button class="tool-btn" id="btn-toggle-soap-devotion" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 8px;" title="Toggle S.O.A.P. Journal Format">SOAP: Off</button>
                 </div>
                 <div class="notes-autosave-badge" id="notes-save-badge">
                   <span>✓</span> Auto-saved
                 </div>
               </div>
-              <textarea 
-                class="notes-textarea" 
-                id="devotion-notes-input" 
-                placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
+
+              <!-- Standard Freeform Notes Container -->
+              <div id="notes-standard-wrap">
+                <textarea 
+                  class="notes-textarea" 
+                  id="devotion-notes-input" 
+                  placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
+              </div>
+
+              <!-- S.O.A.P. Journal Format Container -->
+              <div id="notes-soap-wrap" style="display: none;">
+                <!-- S • SCRIPTURE -->
+                <div class="soap-card soap-card-s">
+                  <div class="soap-card-header">
+                    <span class="soap-letter-badge soap-letter-s">S</span>
+                    <div class="soap-card-title-group">
+                      <span class="soap-card-label">SCRIPTURE</span>
+                      <span class="soap-card-sublabel">Today’s Recommended Reading</span>
+                    </div>
+                  </div>
+                  <textarea 
+                    class="soap-textarea" 
+                    id="soap-scripture-input" 
+                    placeholder="Auto-populated with recommended reading..." 
+                    rows="2"></textarea>
+                </div>
+
+                <!-- O • OBSERVATION -->
+                <div class="soap-card soap-card-o">
+                  <div class="soap-card-header">
+                    <span class="soap-letter-badge soap-letter-o">O</span>
+                    <div class="soap-card-title-group">
+                      <span class="soap-card-label">OBSERVATION</span>
+                      <span class="soap-card-sublabel">What do you think is God telling you with today's scriptures?</span>
+                    </div>
+                  </div>
+                  <textarea 
+                    class="soap-textarea" 
+                    id="soap-observation-input" 
+                    placeholder="What do you think is God telling you with today's scriptures?" 
+                    rows="3"></textarea>
+                </div>
+
+                <!-- A • APPLICATION -->
+                <div class="soap-card soap-card-a">
+                  <div class="soap-card-header">
+                    <span class="soap-letter-badge soap-letter-a">A</span>
+                    <div class="soap-card-title-group">
+                      <span class="soap-card-label">APPLICATION</span>
+                      <span class="soap-card-sublabel">How does today's scriptures apply to your life right now?</span>
+                    </div>
+                  </div>
+                  <textarea 
+                    class="soap-textarea" 
+                    id="soap-application-input" 
+                    placeholder="How does today's scriptures apply to your life right now?" 
+                    rows="3"></textarea>
+                </div>
+
+                <!-- P • PRAYER -->
+                <div class="soap-card soap-card-p">
+                  <div class="soap-card-header">
+                    <span class="soap-letter-badge soap-letter-p">P</span>
+                    <div class="soap-card-title-group">
+                      <span class="soap-card-label">PRAYER</span>
+                      <span class="soap-card-sublabel">Write your prayer for today's devotion.</span>
+                    </div>
+                  </div>
+                  <textarea 
+                    class="soap-textarea" 
+                    id="soap-prayer-input" 
+                    placeholder="Write your prayer for today's devotion." 
+                    rows="3"></textarea>
+                </div>
+              </div>
 
               <!-- Image Upload for Today (Requirement 11) -->
               <div class="devotion-image-box">
@@ -562,6 +634,18 @@
               <option value="eng_kjv">King James Version (English)</option>
               <option value="tgl_ulb">Banal na Bibliya (Tagalog)</option>
             </select>
+          </div>
+
+          <!-- SOAP Devotional Journal Format (Requirement) -->
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">SOAP Journal Format</span>
+              <span class="setting-sublabel">Structure reflections into Scripture, Observation, Application & Prayer</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-soap-toggle">
+              <span class="slider"></span>
+            </label>
           </div>
 
           <div class="setting-row">
