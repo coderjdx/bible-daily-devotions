@@ -318,6 +318,13 @@
     el.appToast = document.getElementById('app-toast');
     el.toastMessage = document.getElementById('toast-message');
     el.confettiCanvas = document.getElementById('confetti-canvas');
+
+    // App Version & Force Update
+    el.btnForceUpdate = document.getElementById('btn-force-update');
+    el.appUpdateStatusText = document.getElementById('app-update-status-text');
+    el.updateBanner = document.getElementById('update-banner');
+    el.btnBannerUpdate = document.getElementById('btn-banner-update');
+    el.btnBannerDismiss = document.getElementById('btn-banner-dismiss');
   }
 
   // --- Date Initialization ---
@@ -1049,6 +1056,16 @@
         const val = el.settingGoogleTtsKey.value.trim();
         window.devotionStore.setSetting('google_tts_api_key', val);
         showToast(val ? 'Google Cloud API key saved!' : 'API key cleared (using built-in free TTS)');
+      });
+    }
+
+    // Force Update & Reload from Server
+    if (el.btnForceUpdate) {
+      el.btnForceUpdate.addEventListener('click', forceAppUpdate);
+    }
+    if (el.btnBannerDismiss && el.updateBanner) {
+      el.btnBannerDismiss.addEventListener('click', () => {
+        el.updateBanner.style.display = 'none';
       });
     }
 
@@ -2753,16 +2770,128 @@
     }, 2800);
   }
 
-  // --- Service Worker Registration ---
+  // --- Service Worker Registration, Auto-Updates & Force Reload ---
+  let swRegistration = null;
+
   function initServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
-        .then((reg) => {
-          console.log('PWA ServiceWorker registered successfully:', reg.scope);
-        })
-        .catch((err) => {
-          console.warn('PWA ServiceWorker registration failed:', err);
-        });
+    // Check for query param '?updated=' after a force update
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('updated')) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      setTimeout(() => {
+        showToast('App successfully updated to latest version! 🚀');
+      }, 500);
+    }
+
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => {
+        swRegistration = reg;
+        console.log('PWA ServiceWorker registered successfully:', reg.scope);
+
+        // 1. Check for newer version on initial app launch if online
+        if (navigator.onLine) {
+          reg.update().catch(() => {});
+        }
+
+        // 2. Listen for newly found updates
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (!installingWorker) return;
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // A newer version has been cached and is ready
+              notifyUpdateAvailable(installingWorker);
+            }
+          };
+        };
+      })
+      .catch((err) => {
+        console.warn('PWA ServiceWorker registration failed:', err);
+      });
+
+    // 3. Auto-check whenever the app is brought back to the foreground (e.g. mobile Homescreen switch)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && navigator.onLine && swRegistration) {
+        swRegistration.update().catch(() => {});
+      }
+    });
+
+    // 4. Auto-check whenever internet connection is restored
+    window.addEventListener('online', () => {
+      if (swRegistration) {
+        swRegistration.update().catch(() => {});
+      }
+    });
+
+    // 5. When the new Service Worker activates and claims clients, reload smoothly
+    let isRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      window.location.reload();
+    });
+  }
+
+  function notifyUpdateAvailable(worker) {
+    if (el.updateBanner) {
+      el.updateBanner.style.display = 'flex';
+      if (el.btnBannerUpdate) {
+        el.btnBannerUpdate.onclick = () => {
+          worker.postMessage({ action: 'skipWaiting' });
+        };
+      }
+    } else {
+      showToast('A newer version of Daily Devotions is available! 🚀');
+    }
+  }
+
+  async function forceAppUpdate() {
+    if (!navigator.onLine) {
+      showToast('You are offline. Connect to the internet to check for updates. 📡');
+      return;
+    }
+
+    if (el.btnForceUpdate) {
+      el.btnForceUpdate.disabled = true;
+      el.btnForceUpdate.innerHTML = '<span>⏳</span> Fetching Latest Version...';
+    }
+    if (el.appUpdateStatusText) {
+      el.appUpdateStatusText.textContent = 'Contacting server...';
+    }
+    showToast('Checking server for updates... 🔄');
+
+    try {
+      // 1. Purge HTTP asset caches in CacheStorage
+      // NOTE: This clears ONLY the cached HTML/CSS/JS asset files!
+      // IndexedDB (all notes, photos, completions, streaks) is NEVER touched and 100% preserved.
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map(k => caches.delete(k)));
+      }
+
+      // 2. Unregister all existing Service Workers so the fresh version installs immediately
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+
+      if (el.appUpdateStatusText) {
+        el.appUpdateStatusText.textContent = 'Reloading fresh version...';
+      }
+      showToast('Reloading fresh app version... 🚀');
+
+      // 3. Reload with cache-busting timestamp parameter to bypass browser disk cache
+      setTimeout(() => {
+        window.location.href = window.location.origin + window.location.pathname + '?updated=' + Date.now();
+      }, 400);
+    } catch (err) {
+      console.warn('Force update error:', err);
+      window.location.href = window.location.origin + window.location.pathname + '?updated=' + Date.now();
     }
   }
 

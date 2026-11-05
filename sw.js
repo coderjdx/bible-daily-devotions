@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-devotions-v14';
+const CACHE_NAME = 'daily-devotions-v15';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -33,13 +33,20 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== 'helloao-api-cache') {
             return caches.delete(key);
           }
         })
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Listen for message from client (e.g. skipWaiting)
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data === 'SKIP_WAITING' || event.data.action === 'skipWaiting')) {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -65,7 +72,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: cache first, fallback to network
+  // For HTML page navigation requests: network first with cache fallback
+  // Ensures fresh index.html is loaded from live server whenever online, while offline still works seamlessly!
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('./index.html') || caches.match('./'));
+        })
+    );
+    return;
+  }
+
+  // App shell assets: cache first, fallback to network
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

@@ -28,6 +28,21 @@
     <span id="toast-message">Notes saved</span>
   </div>
 
+  <!-- Update Available Floating Banner -->
+  <div id="update-banner" class="update-banner" style="display: none;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 1.25rem;">🚀</span>
+      <div>
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Update Available</div>
+        <div style="font-size: 0.74rem; color: var(--text-secondary);">A fresh version of Daily Devotions is ready.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button class="btn-primary" id="btn-banner-update" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; border-radius: var(--radius-sm); border: none; cursor: pointer;">Update</button>
+      <button id="btn-banner-dismiss" style="background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; padding: 4px 6px;">✕</button>
+    </div>
+  </div>
+
   <!-- Celebration confetti canvas -->
   <canvas id="confetti-canvas"></canvas>
 
@@ -836,12 +851,37 @@
             </div>
           </div>
         </div>
+
+        <!-- SECTION 5: APP UPDATES & VERSION SYNC -->
+        <div class="setting-group" style="margin-top: 14px;">
+          <div class="setting-group-title">
+            <span>🚀</span> App Updates & Version Sync
+          </div>
+
+          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="setting-row-left">
+                <span class="setting-label">Live Server Synchronization</span>
+                <span class="setting-sublabel" id="app-update-status-text">Version 2.1 • Auto-checks on open</span>
+              </div>
+              <span class="hero-day-tag" id="app-version-badge" style="background: rgba(245, 158, 11, 0.18); color: var(--accent-gold-light); font-weight: 700;">v2.1</span>
+            </div>
+
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+              Reloads the newest app files directly from the server to bypass cached assets. Recommended for Homescreen and installed PWA instances after new updates. <strong>None of your reflections, completions, or photos will be affected.</strong>
+            </p>
+
+            <button class="btn-primary-action" id="btn-force-update" style="padding: 12px 18px; font-size: 0.88rem; justify-content: center; font-weight: 700; width: 100%;">
+              <span>🔄</span> Force Update & Reload from Server
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-        <!-- SECTION 5: APP INFO -->
+        <!-- SECTION 6: APP INFO -->
         <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 30px;">
-          <p><strong>Daily Devotions</strong> • <span style="color: var(--accent-gold); font-weight: 600;">v2.0 (Stable Reference Release)</span></p>
+          <p><strong>Daily Devotions</strong> • <span style="color: var(--accent-gold); font-weight: 600;">v2.1</span></p>
           <p>Daily Reading Plan with Scripture, S.O.A.P. Journal & Audio</p>
           <p style="margin-top: 4px;">Scriptures powered by HelloAO Bible API</p>
           <p style="margin-top: 2px;">Offline Responsive PWA • Render Ready</p>
