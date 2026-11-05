@@ -588,11 +588,55 @@
     // Notes auto-save with debounce
     let noteSaveTimeout = null;
     function triggerNotesSave(isSoap) {
-      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '⏳ Saving...';
       clearTimeout(noteSaveTimeout);
+      const dateStr = getDayDateStr(state.currentDay);
+
+      if (isSoap) {
+        const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
+        const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
+        const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
+        const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
+
+        // User Requirement: "When SOAP is enabled, do not autosave journal entries if the SCRIPTURE section is the only one filled out as that box is auto-filled."
+        if (!hasUserReflections) {
+          if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+          // Remove any stale or empty note for this date
+          noteSaveTimeout = setTimeout(async () => {
+            if (window.devotionStore.deleteNote) {
+              await window.devotionStore.deleteNote(dateStr);
+            }
+          }, 300);
+          return;
+        }
+      } else {
+        const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
+        if (!stdText) {
+          if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+          noteSaveTimeout = setTimeout(async () => {
+            if (window.devotionStore.deleteNote) {
+              await window.devotionStore.deleteNote(dateStr);
+            }
+          }, 300);
+          return;
+        }
+      }
+
+      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '⏳ Saving...';
       noteSaveTimeout = setTimeout(async () => {
-        const dateStr = getDayDateStr(state.currentDay);
         if (isSoap) {
+          const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
+          const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
+          const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
+          const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
+
+          if (!hasUserReflections) {
+            if (window.devotionStore.deleteNote) {
+              await window.devotionStore.deleteNote(dateStr);
+            }
+            if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+            return;
+          }
+
           const sched = window.bibleService.getDaySchedule(state.currentDay);
           const defaultScripture = sched ? sched.scriptures : '';
           const scriptureVal = (el.soapScriptureInput && el.soapScriptureInput.value.trim()) ? el.soapScriptureInput.value : defaultScripture;
@@ -605,7 +649,15 @@
           };
           await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj));
         } else {
-          await window.devotionStore.saveNote(dateStr, el.devotionNotesInput ? el.devotionNotesInput.value : '');
+          const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
+          if (!stdText) {
+            if (window.devotionStore.deleteNote) {
+              await window.devotionStore.deleteNote(dateStr);
+            }
+            if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+            return;
+          }
+          await window.devotionStore.saveNote(dateStr, el.devotionNotesInput.value);
         }
         if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
       }, 500);
@@ -1305,9 +1357,14 @@
     state.currentDay = dayNum;
     const dateStr = getDayDateStr(dayNum);
     const dateObj = new Date(2026, 10, dayNum);
+    const isFuture = (dayNum > state.simulatedTodayDay);
 
     // Update Top bar
-    el.devotionDaySubtitle.textContent = `November 2026 • Day ${dayNum} of 30`;
+    if (isFuture) {
+      el.devotionDaySubtitle.textContent = `November 2026 • Day ${dayNum} of 30 (Preview Mode 👁️)`;
+    } else {
+      el.devotionDaySubtitle.textContent = `November 2026 • Day ${dayNum} of 30`;
+    }
     el.devotionDayTitle.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
     // Prev / Next button states
@@ -1404,7 +1461,17 @@
       if (el.soapApplicationInput) el.soapApplicationInput.value = '';
       if (el.soapPrayerInput) el.soapPrayerInput.value = '';
     }
-    if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
+    if (parsedNote.format === 'soap') {
+      const hasContent = Boolean(
+        (parsedNote.observation && parsedNote.observation.trim()) ||
+        (parsedNote.application && parsedNote.application.trim()) ||
+        (parsedNote.prayer && parsedNote.prayer.trim())
+      );
+      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = hasContent ? '<span>✓</span> Saved' : '';
+    } else {
+      const hasContent = Boolean(parsedNote.text && parsedNote.text.trim());
+      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = hasContent ? '<span>✓</span> Saved' : '';
+    }
 
     const savedImg = await window.devotionStore.getImage(dateStr);
     if (savedImg && savedImg.dataUrl) {
@@ -1422,8 +1489,19 @@
       el.completedBadgeCard.style.display = 'block';
       const timeStr = completion.completedAt ? new Date(completion.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
       el.completedTimestampText.textContent = `Completed on ${completion.date}${timeStr ? ' at ' + timeStr : ''}${completion.isRecovered ? ' (Recovered ✨)' : ''}`;
+    } else if (isFuture) {
+      el.btnMarkComplete.style.display = 'flex';
+      el.btnMarkComplete.disabled = true;
+      el.btnMarkComplete.classList.add('disabled-future');
+      el.btnMarkComplete.innerHTML = '<span>🔒</span> Preview Only (Available on Day ' + dayNum + ')';
+      el.btnMarkComplete.title = 'Future devotions can be previewed, but cannot be completed until Day ' + dayNum + '.';
+      el.completedBadgeCard.style.display = 'none';
     } else {
       el.btnMarkComplete.style.display = 'flex';
+      el.btnMarkComplete.disabled = false;
+      el.btnMarkComplete.classList.remove('disabled-future');
+      el.btnMarkComplete.innerHTML = '<span>✓</span> Mark Day as Complete';
+      el.btnMarkComplete.title = 'Mark this devotion as completed';
       el.completedBadgeCard.style.display = 'none';
     }
   }
@@ -1675,6 +1753,11 @@
 
   // --- Mark as Complete (Requirement 3 & 12) ---
   async function handleMarkComplete() {
+    if (state.currentDay > state.simulatedTodayDay) {
+      showToast(`Day ${state.currentDay} is a future devotion. Preview only! Completion unlocks on its date. 🔒`);
+      return;
+    }
+
     const dateStr = getDayDateStr(state.currentDay);
     const scheduledDateStr = dateStr;
     const todayDateStr = state.todayDateStr;
@@ -1739,6 +1822,7 @@
       if (isToday) cell.classList.add('today');
       if (isFuture) {
         cell.classList.add('future');
+        cell.title = `Day ${d} (Preview devotion readings)`;
       } else if (!isToday) {
         cell.classList.add('missed');
       }
@@ -1748,13 +1832,11 @@
         <span class="day-indicator"></span>
       `;
 
-      // Requirement 9: Future dates should not be selectable
-      if (!isFuture) {
-        cell.addEventListener('click', () => {
-          state.currentDay = d;
-          switchView('devotion');
-        });
-      }
+      // Users can preview future dates as well as current/past dates
+      cell.addEventListener('click', () => {
+        state.currentDay = d;
+        switchView('devotion');
+      });
 
       el.calDaysGrid.appendChild(cell);
       cellMap.set(d, cell);
@@ -1821,8 +1903,23 @@
       const comp = completionsMap.get(dStr);
       const sched = window.bibleService.getDaySchedule(d);
 
-      if (note || img || comp) {
-        entries.push({ day: d, dateStr: dStr, note, img, comp, sched });
+      // Check if note has actual content (ignore auto-filled Scripture-only notes)
+      let hasValidNote = false;
+      if (note && note.trim()) {
+        const parsed = parseNoteData(note, sched ? sched.scriptures : '');
+        if (parsed.format === 'soap') {
+          hasValidNote = Boolean(
+            (parsed.observation && parsed.observation.trim()) ||
+            (parsed.application && parsed.application.trim()) ||
+            (parsed.prayer && parsed.prayer.trim())
+          );
+        } else {
+          hasValidNote = Boolean(parsed.text && parsed.text.trim());
+        }
+      }
+
+      if (hasValidNote || img || comp) {
+        entries.push({ day: d, dateStr: dStr, note: hasValidNote ? note : null, img, comp, sched });
       }
     }
 

@@ -1143,6 +1143,26 @@ html, body {
   transform: scale(0.98);
 }
 
+/* Disabled Future Devotion Complete Button */
+.btn-complete-day.disabled-future,
+.btn-complete-day:disabled {
+  background: var(--bg-card) !important;
+  border: 1px dashed var(--border-subtle) !important;
+  color: var(--text-muted) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+}
+
+.btn-complete-day.disabled-future:hover,
+.btn-complete-day:disabled:hover,
+.btn-complete-day.disabled-future:active,
+.btn-complete-day:disabled:active {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--border-subtle) !important;
+}
+
 .completed-badge-card {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.4);
@@ -1322,12 +1342,21 @@ html, body {
   color: var(--accent-gold-light);
 }
 
-/* Future Date - Requirement 9: Not selectable */
+/* Future Date: Selectable for Preview */
 .cal-day-cell.future {
-  opacity: 0.35;
-  cursor: not-allowed;
+  opacity: 0.7;
+  cursor: pointer;
   background: rgba(255, 255, 255, 0.02);
-  pointer-events: none;
+  pointer-events: auto;
+  border: 1px dashed var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.cal-day-cell.future:hover {
+  opacity: 1;
+  border-color: var(--accent-gold);
+  background: rgba(217, 119, 6, 0.1);
+  transform: translateY(-2px);
 }
 
 .cal-legend {

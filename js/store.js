@@ -179,6 +179,27 @@ class DevotionStore {
     return true;
   }
 
+  async removeNote(dateStr) {
+    try {
+      const store = await this.getStore('notes', 'readwrite');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.delete(dateStr);
+          req.onsuccess = () => res(true);
+          req.onerror = () => res(false);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback removeNote', e);
+    }
+    localStorage.removeItem(`note_${dateStr}`);
+    return true;
+  }
+
+  async deleteNote(dateStr) {
+    return this.removeNote(dateStr);
+  }
+
   async getAllNotes() {
     try {
       const store = await this.getStore('notes');
