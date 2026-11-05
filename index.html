@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Daily Devotions">
+  <meta name="description" content="Daily Devotions - Bible Reading Plan with Scripture, Audio Read Aloud, Journaling, Alarms, and Offline Support">
+  
+  <title>Daily Devotions</title>
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="./icons/favicon.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+
+  <!-- Landscape warning on mobile -->
+  <div id="landscape-warning">
+    <div class="rotate-icon">📱</div>
+    <h2 style="font-size: 1.2rem; margin-bottom: 8px;">Portrait Mode Preferred</h2>
+    <p style="font-size: 0.9rem; color: #94a3b8; max-width: 280px;">Please rotate your device to portrait orientation for the best devotional reading experience.</p>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="app-toast">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">Notes saved</span>
+  </div>
+
+  <!-- Celebration confetti canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Main Mobile App Shell -->
+  <div class="app-container">
+
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="app-brand">
+          <img src="./icons/favicon.png" alt="Daily Devotions" class="brand-icon">
+          <span>Daily Devotions</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Translation Picker Pill (Requirement 13) -->
+        <button id="btn-version-picker" class="version-pill" title="Tap to change Bible translation">
+          <span>📖</span>
+          <span id="hdr-version-name">BSB (Eng)</span>
+          <span>▾</span>
+        </button>
+        <!-- Dark/Light Theme Toggle -->
+        <button id="btn-theme-toggle" class="header-btn" title="Toggle Light/Dark Theme">🌙</button>
+        <!-- Settings Shortcut -->
+        <button id="btn-header-settings" class="header-btn" title="Settings & Alarms">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Viewport -->
+    <main class="main-viewport" id="main-viewport">
+
+      <!-- ==========================================
+           VIEW 1: HOME SCREEN
+           ========================================== -->
+      <section class="app-view active" id="view-home">
+        <!-- Greeting & Date -->
+        <div class="greeting-section">
+          <div class="greeting-date" id="home-greeting-date">
+            <span>📅</span> <span id="home-date-str">Tuesday, November 3, 2026</span>
+          </div>
+          <h1 class="greeting-title" id="home-greeting-title">Good Morning, Champion!</h1>
+          <!-- Random BSB Scripture Rolodex on the Importance of God's Word -->
+          <div class="greeting-rolodex-card" id="home-rolodex-box">
+            <span class="rolodex-quote-mark">“</span>
+            <div class="rolodex-verse-text" id="home-rolodex-text">
+              Your word is a lamp to my feet and a light to my path.
+            </div>
+            <div class="rolodex-bottom-row">
+              <span class="rolodex-reference" id="home-rolodex-ref">Psalm 119:105 (BSB)</span>
+              <button class="rolodex-shuffle-btn" id="btn-shuffle-rolodex" title="Read another verse on God's Word">
+                <span>🎲</span> Random Verse
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Devotion Hero Card -->
+        <div class="hero-card">
+          <div class="hero-badge-row">
+            <span class="hero-day-tag" id="hero-day-tag">✨ Day 3 of 30</span>
+            <span class="hero-status-pill incomplete" id="hero-status-pill">● Incomplete</span>
+          </div>
+          <h2 class="hero-title" id="hero-title">Today’s Devotion Reading</h2>
+          <div class="hero-scriptures" id="hero-scriptures">
+            Psalms 119:153-160, Hebrews 4:14-16 ; 5:1-10, Ezekiel 1 ; 2 ; 3
+          </div>
+          <div class="hero-meta-row">
+            <div class="meta-item">
+              <span>⏱️</span> <span id="hero-time">13m 41s</span>
+            </div>
+            <div class="meta-item">
+              <span>📖</span> <span id="hero-passages-count">6 Passages</span>
+            </div>
+            <div class="meta-item">
+              <span>🗓️</span> <span id="hero-day-of-year">Day 307</span>
+            </div>
+          </div>
+          <button class="btn-primary-action" id="btn-hero-action">
+            <span id="hero-action-icon">📖</span>
+            <span id="hero-action-text">Start Today’s Devotion</span>
+          </button>
+        </div>
+
+        <!-- Progress & Streak Dashboard (Requirement 12) -->
+        <div class="section-heading">
+          <span>Monthly Progress & Streaks</span>
+          <span style="font-size: 0.75rem; color: var(--accent-gold-light);">November 2026</span>
+        </div>
+        <div class="stats-grid">
+          <!-- Streak Flame Indicator -->
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon">🔥</span>
+              <span class="stat-tag gold">Active</span>
+            </div>
+            <div class="stat-value" id="stat-streak-count">0</div>
+            <div class="stat-label">Day Devotion Streak</div>
+          </div>
+
+          <!-- Completed this Month -->
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon">✅</span>
+              <span class="stat-tag green" id="stat-completed-pct">0%</span>
+            </div>
+            <div class="stat-value" id="stat-completed-count">0 / 30</div>
+            <div class="stat-label">Days Completed</div>
+          </div>
+
+          <!-- Missed this Month -->
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon">⏳</span>
+              <span class="stat-tag red">Catch Up</span>
+            </div>
+            <div class="stat-value" id="stat-missed-count">0</div>
+            <div class="stat-label">Days Missed</div>
+          </div>
+
+          <!-- Recovered Counter (Requirement 12) -->
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon">✨</span>
+              <span class="stat-tag purple">Recovered</span>
+            </div>
+            <div class="stat-value" id="stat-recovered-count">0</div>
+            <div class="stat-label">Completed After Date</div>
+          </div>
+        </div>
+
+        <!-- Quick Access Navigation Cards -->
+        <div class="section-heading">
+          <span>Quick Actions</span>
+        </div>
+        <div class="quick-cards">
+          <div class="quick-card" id="card-nav-calendar">
+            <div class="quick-left">
+              <div class="quick-icon-box">📅</div>
+              <div>
+                <div class="quick-title">Monthly Devotion Calendar</div>
+                <div class="quick-desc">Track completions, review past days & catch up</div>
+              </div>
+            </div>
+            <span class="quick-arrow">›</span>
+          </div>
+
+          <div class="quick-card" id="card-nav-journal">
+            <div class="quick-left">
+              <div class="quick-icon-box">✍️</div>
+              <div>
+                <div class="quick-title">Devotion Journal & Photo Gallery</div>
+                <div class="quick-desc">Reflections, prayers & spiritual memories</div>
+              </div>
+            </div>
+            <span class="quick-arrow">›</span>
+          </div>
+
+          <div class="quick-card" id="card-nav-settings">
+            <div class="quick-left">
+              <div class="quick-icon-box">⚙️</div>
+              <div>
+                <div class="quick-title">Settings & Data Management</div>
+                <div class="quick-desc">Alarms, push reminders, offline cache & backup</div>
+              </div>
+            </div>
+            <span class="quick-arrow">›</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 2: DAILY DEVOTION READER
+           ========================================== -->
+      <section class="app-view" id="view-devotion">
+        <!-- Top Bar: Day Navigation & Text Controls -->
+        <div class="devotion-top-bar">
+          <div class="day-nav-group">
+            <button class="day-nav-btn" id="btn-prev-day" title="Previous Day">‹</button>
+            <button class="day-nav-btn" id="btn-next-day" title="Next Day">›</button>
+          </div>
+          <div class="day-title-box">
+            <div class="day-title-sub" id="devotion-day-subtitle">November 2026 • Day 3</div>
+            <div class="day-title-main" id="devotion-day-title">Tuesday, Nov 3</div>
+          </div>
+          <div class="devotion-text-tools">
+            <button class="tool-btn" id="btn-font-smaller" title="Smaller Font">A-</button>
+            <button class="tool-btn" id="btn-font-larger" title="Larger Font">A+</button>
+            <button class="tool-btn" id="btn-font-family" title="Toggle Serif/Sans">Serif</button>
+          </div>
+        </div>
+
+        <!-- Read Aloud Banner (Google TTS) -->
+        <div class="read-aloud-banner" id="devotion-tts-banner">
+          <div class="tts-banner-left">
+            <span class="tts-wave-icon">🔊</span>
+            <div>
+              <div class="tts-banner-title">Read Aloud (Calm Voice)</div>
+              <div class="tts-banner-sub">Google TTS • Calm pace • No verse numbers</div>
+            </div>
+          </div>
+          <button class="btn-tts-listen" id="btn-read-all-tts" title="Listen to all scriptures for today">
+            <span id="btn-read-all-icon">▶️</span> <span id="btn-read-all-text">Read All</span>
+          </button>
+        </div>
+
+        <!-- Scripture Passage Quick Jump Tabs -->
+        <div class="passage-tabs" id="passage-tabs">
+          <button class="passage-tab active" data-target="all">All Readings (6)</button>
+        </div>
+
+        <!-- Passages Content Container -->
+        <div id="passages-container">
+          <div class="empty-state-box">
+            <div class="empty-state-icon">📖</div>
+            <p>Loading scriptures...</p>
+          </div>
+        </div>
+
+        <!-- Journal Notes & Reflection Section (Requirement 11) -->
+        <div class="devotion-notes-section">
+          <div class="notes-header">
+            <div class="notes-title">
+              <span>✍️</span> My Notes & Reflection
+            </div>
+            <div class="notes-autosave-badge" id="notes-save-badge">
+              <span>✓</span> Auto-saved
+            </div>
+          </div>
+          <textarea 
+            class="notes-textarea" 
+            id="devotion-notes-input" 
+            placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
+
+          <!-- Image Upload for Today (Requirement 11) -->
+          <div class="devotion-image-box">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photo / Reflection</span>
+              <label class="image-upload-trigger">
+                <span>➕ Add Photo</span>
+                <input type="file" id="devotion-image-file" accept="image/*" style="display: none;">
+              </label>
+            </div>
+            <div id="devotion-image-preview-container" style="display: none;">
+              <div class="image-preview-wrap">
+                <img id="devotion-image-preview" src="" alt="Devotional image" class="image-preview-img">
+                <button class="image-remove-btn" id="btn-remove-image" title="Remove Photo">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Mark as Complete Button (Requirement 3) -->
+        <div class="devotion-complete-section" id="devotion-complete-section">
+          <button class="btn-complete-day" id="btn-mark-complete">
+            <span>✓</span> Mark Day as Complete
+          </button>
+          <div class="completed-badge-card" id="completed-badge-card" style="display: none;">
+            <div class="done-icon">🎉</div>
+            <div class="done-text">Devotion Completed!</div>
+            <div class="done-timestamp" id="completed-timestamp-text">Completed on Nov 3, 2026 at 7:32 AM</div>
+            <button class="unmark-btn" id="btn-unmark-complete">Mark as Incomplete</button>
+          </div>
+        </div>
+
+        <!-- Floating Audio Player Bar -->
+        <div class="floating-tts-player" id="floating-tts-player" style="display: none;">
+          <div class="tts-player-info">
+            <span class="tts-live-wave">🎧</span>
+            <div class="tts-track-meta">
+              <div class="tts-track-title" id="tts-player-title">Daily Devotion Reading</div>
+              <div class="tts-track-status" id="tts-player-status">Playing calm scripture audio...</div>
+            </div>
+          </div>
+          <div class="tts-player-controls">
+            <button class="tts-ctrl-btn" id="btn-tts-play-pause" title="Play / Pause">⏸️</button>
+            <button class="tts-ctrl-btn" id="btn-tts-stop" title="Stop">⏹️</button>
+            <button class="tts-ctrl-btn" id="btn-tts-download" title="Download Audio File (MP3)">💾</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 3: CALENDAR VIEW
+           ========================================== -->
+      <section class="app-view" id="view-calendar">
+        <!-- Calendar Header -->
+        <div class="calendar-header-card">
+          <div class="cal-month-row">
+            <div class="cal-month-title">November 2026</div>
+            <span class="hero-day-tag">30 Days Plan</span>
+          </div>
+          <div class="cal-stats-summary">
+            <div class="cal-stat-item">
+              <span class="cal-stat-num" id="cal-completed-num" style="color: var(--accent-green-light);">0</span>
+              <span>Completed</span>
+            </div>
+            <div class="cal-stat-item">
+              <span class="cal-stat-num" id="cal-recovered-num" style="color: var(--accent-purple);">0</span>
+              <span>Recovered</span>
+            </div>
+            <div class="cal-stat-item">
+              <span class="cal-stat-num" id="cal-missed-num" style="color: #f87171;">0</span>
+              <span>Missed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar Month Grid (Requirement 9) -->
+        <div class="calendar-grid-card">
+          <!-- Weekdays -->
+          <div class="cal-weekdays">
+            <span>SUN</span>
+            <span>MON</span>
+            <span>TUE</span>
+            <span>WED</span>
+            <span>THU</span>
+            <span>FRI</span>
+            <span>SAT</span>
+          </div>
+          <!-- Days Grid -->
+          <div class="cal-days-grid" id="cal-days-grid">
+            <!-- Dynamically generated day cells -->
+          </div>
+
+          <!-- Calendar Status Legend -->
+          <div class="cal-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background: var(--accent-green);"></span>
+              <span>Completed</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: var(--accent-purple);"></span>
+              <span>Recovered</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: var(--accent-red);"></span>
+              <span>Missed</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: var(--accent-gold);"></span>
+              <span>Today</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: rgba(255,255,255,0.2);"></span>
+              <span>Future (Locked)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 4: JOURNAL & GALLERY PAGE
+           ========================================== -->
+      <section class="app-view" id="view-journal">
+        <!-- Month Selector & View Toggle (Requirement 14) -->
+        <div class="journal-top-bar">
+          <select class="month-selector-select" id="journal-month-select">
+            <option value="2026-11" selected>November 2026</option>
+            <option value="2026-10">October 2026</option>
+            <option value="2026-09">September 2026</option>
+          </select>
+          <div class="journal-view-toggle">
+            <button class="view-toggle-btn active" id="btn-toggle-entries">Notes</button>
+            <button class="view-toggle-btn" id="btn-toggle-gallery">Photos</button>
+          </div>
+        </div>
+
+        <!-- Journal Notes List Tab -->
+        <div id="journal-entries-tab">
+          <div id="journal-entries-list">
+            <!-- Dynamically populated journal entry cards -->
+          </div>
+        </div>
+
+        <!-- Journal Photo Gallery Tab -->
+        <div id="journal-gallery-tab" style="display: none;">
+          <div class="journal-gallery-grid" id="journal-gallery-grid">
+            <!-- Dynamically populated photo tiles -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 5: SETTINGS, ALARMS & DATA MANAGEMENT
+           ========================================== -->
+      <section class="app-view" id="view-settings">
+        <!-- Settings Header -->
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; color: var(--accent-gold-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Preferences & Control</div>
+          <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--text-primary);">Settings</h1>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Manage alarms, notifications, offline scriptures & app data</p>
+        </div>
+
+        <!-- SECTION 1: ALARMS & NOTIFICATIONS -->
+        <div class="setting-group">
+          <div class="setting-group-title">
+            <span>⏰</span> Alarms & Notifications
+          </div>
+
+          <!-- Active Snooze Banner (shown if currently snoozed) -->
+          <div class="snooze-active-card" id="settings-snooze-card" style="display: none;">
+            <div class="snooze-active-text">
+              <span>🔔</span> <span id="settings-snooze-text">Alarm snoozed until 07:30 AM</span>
+            </div>
+            <button class="tool-btn" id="btn-cancel-active-snooze" style="padding: 4px 10px; background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(239, 68, 68, 0.4);">
+              Cancel Snooze
+            </button>
+          </div>
+
+          <!-- Daily Alarm Setting -->
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Daily Devotion Alarm</span>
+              <span class="setting-sublabel">Wake up with God’s Word</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-alarm-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Alarm Time</span>
+              <span class="setting-sublabel">Preferred devotion time</span>
+            </div>
+            <input type="time" class="time-input" id="setting-alarm-time" value="07:00">
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Alarm Tone Sound</span>
+              <span class="setting-sublabel">Synthesized offline chime</span>
+            </div>
+            <select class="time-input" id="setting-alarm-tone" style="font-size: 0.85rem;">
+              <option value="cathedral" selected>Cathedral Chimes</option>
+              <option value="harp">Morning Harp</option>
+              <option value="gentle">Gentle Zen Bowl</option>
+              <option value="chime">Classic Bell</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Snooze Duration</span>
+              <span class="setting-sublabel">Interval when snoozed</span>
+            </div>
+            <select class="time-input" id="setting-snooze-duration" style="font-size: 0.85rem;">
+              <option value="5">5 Minutes</option>
+              <option value="10" selected>10 Minutes</option>
+              <option value="15">15 Minutes</option>
+              <option value="30">30 Minutes</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <button class="btn-secondary-action" id="btn-test-alarm-sound" style="width: 100%;">
+              <span>🔔</span> Preview Alarm Tone
+            </button>
+          </div>
+
+          <!-- Automatic Evening Reminders (Requirement 5) -->
+          <div class="setting-row" style="margin-top: 14px;">
+            <div class="setting-row-left">
+              <span class="setting-label">Evening Reminder Alerts</span>
+              <span class="setting-sublabel">Automatic at 7:00 PM & 9:00 PM if incomplete</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-evening-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Push Notification Permission</span>
+              <span class="setting-sublabel" id="notif-perm-status">Status: Default</span>
+            </div>
+            <button class="tool-btn" id="btn-request-notif-perm" style="padding: 6px 12px;">Enable</button>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button class="btn-secondary-action" id="btn-test-7pm" style="flex: 1; font-size: 0.78rem;">
+              Test 7:00 PM Alert
+            </button>
+            <button class="btn-secondary-action" id="btn-test-9pm" style="flex: 1; font-size: 0.78rem;">
+              Test 9:00 PM Alert
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: READING & DISPLAY PREFERENCES -->
+        <div class="setting-group">
+          <div class="setting-group-title">
+            <span>📖</span> Reading & Display Preferences
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Active Bible Version</span>
+              <span class="setting-sublabel">HelloAO API free translations</span>
+            </div>
+            <select class="time-input" id="setting-version-dropdown" style="font-size: 0.85rem;">
+              <option value="BSB">Berean Standard Bible (English)</option>
+              <option value="tgl_bib">Ang Salita ng Diyos (Tagalog)</option>
+              <option value="ENGWEBP">World English Bible (English)</option>
+              <option value="eng_kjv">King James Version (English)</option>
+              <option value="tgl_ulb">Banal na Bibliya (Tagalog)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Devotional Font Style</span>
+              <span class="setting-sublabel">Scripture typography</span>
+            </div>
+            <select class="time-input" id="setting-font-family" style="font-size: 0.85rem;">
+              <option value="serif">Serif (Charter / Merriweather)</option>
+              <option value="sans">Sans-Serif (Modern Clean)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Visual Theme</span>
+              <span class="setting-sublabel">Day / night reading mode</span>
+            </div>
+            <button class="btn-secondary-action" id="btn-settings-theme-toggle" style="padding: 6px 12px; font-size: 0.82rem;">
+              <span id="settings-theme-icon">🌙</span> <span id="settings-theme-label">Dark Theme</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 3: TEXT-TO-SPEECH (AUDIO READING) -->
+        <div class="setting-group">
+          <div class="setting-group-title">
+            <span>🔊</span> Text-To-Speech (Audio Reading)
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Reading Pace</span>
+              <span class="setting-sublabel">Natural speech delivery speed</span>
+            </div>
+            <select class="time-input" id="setting-tts-rate" style="font-size: 0.85rem;">
+              <option value="0.85" selected>0.85x (Solemn & Slow - Default)</option>
+              <option value="0.90">0.90x (Calm & Deliberate)</option>
+              <option value="1.00">1.00x (Natural Pace)</option>
+              <option value="1.10">1.10x (Brisk)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Preferred Voice</span>
+              <span class="setting-sublabel">Solemn male & natural system voices</span>
+            </div>
+            <select class="time-input" id="setting-tts-voice" style="font-size: 0.85rem; max-width: 175px;">
+              <option value="">Default: Google UK English Male (Auto)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <span class="setting-label">Test Voice</span>
+              <span class="setting-sublabel">Preview calm scripture delivery</span>
+            </div>
+            <button class="btn-secondary-action" id="btn-test-tts-voice" style="padding: 6px 14px; font-size: 0.82rem;">
+              <span>▶️</span> Test Voice
+            </button>
+          </div>
+
+          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div class="setting-row-left">
+              <span class="setting-label">Google Cloud TTS API Key (Optional)</span>
+              <span class="setting-sublabel" style="line-height: 1.4;">Leave blank to enjoy built-in Google TTS voices for free without an API key. Or provide a Google Cloud key for Neural2 MP3 synthesis.</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="password" class="time-input" id="setting-google-tts-key" placeholder="AIzaSy... (Optional)" style="flex: 1; font-size: 0.82rem; padding: 8px 10px;">
+              <button class="btn-secondary-action" id="btn-save-google-tts-key" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap;">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: DATA & STORAGE MANAGEMENT -->
+        <div class="setting-group">
+          <div class="setting-group-title">
+            <span>💾</span> Data & Storage Management
+          </div>
+
+          <!-- Storage Statistics Summary Grid -->
+          <div class="data-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));">
+            <div class="data-stat-box">
+              <span class="data-stat-val" id="stat-data-completions">0</span>
+              <span class="data-stat-lbl">Completed</span>
+            </div>
+            <div class="data-stat-box">
+              <span class="data-stat-val" id="stat-data-notes">0</span>
+              <span class="data-stat-lbl">Notes</span>
+            </div>
+            <div class="data-stat-box">
+              <span class="data-stat-val" id="stat-data-photos">0</span>
+              <span class="data-stat-lbl">Photos</span>
+            </div>
+            <div class="data-stat-box">
+              <span class="data-stat-val" id="stat-data-chapters">105</span>
+              <span class="data-stat-lbl">Offline Ch.</span>
+            </div>
+            <div class="data-stat-box">
+              <span class="data-stat-val" id="stat-data-tts">0</span>
+              <span class="data-stat-lbl">TTS Audio</span>
+            </div>
+          </div>
+
+          <!-- Offline Scripture Manager -->
+          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 10px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="setting-row-left">
+                <span class="setting-label">Offline Scripture Cache</span>
+                <span class="setting-sublabel" id="offline-summary-text">105 chapters ready in offline storage</span>
+              </div>
+              <span class="hero-day-tag" id="offline-badge-ready" style="background: rgba(16,185,129,0.2); color:#34d399;">✓ Ready</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+              <span id="download-progress-text">Offline storage ready</span>
+              <span id="download-progress-pct">100%</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" id="download-progress-bar" style="width: 100%;"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-primary-action" id="btn-download-month" style="flex: 2; padding: 10px; font-size: 0.82rem;">
+                <span>📥</span> Re-Download Month
+              </button>
+              <button class="btn-danger-action" id="btn-clear-scripture-cache" style="flex: 1; padding: 10px; font-size: 0.78rem;">
+                Clear Cache
+              </button>
+            </div>
+          </div>
+
+          <!-- Backup & Restore Data (Export / Import) -->
+          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
+            <div class="setting-row-left">
+              <span class="setting-label">Backup & Restore Devotions</span>
+              <span class="setting-sublabel">Export all reflections, completions & photos to a JSON backup file</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-secondary-action" id="btn-export-data" style="flex: 1; padding: 10px; font-size: 0.82rem;">
+                <span>📤</span> Export Backup (JSON)
+              </button>
+              <button class="btn-secondary-action" id="btn-import-data-trigger" style="flex: 1; padding: 10px; font-size: 0.82rem;">
+                <span>📥</span> Restore Backup
+              </button>
+              <!-- Hidden file input for import -->
+              <input type="file" id="input-import-backup" accept=".json" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Data Deletion Section (User Requirement 5) -->
+          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
+            <div class="setting-row-left">
+              <span class="setting-label" style="color: #f87171;">Data Deletion</span>
+              <span class="setting-sublabel">Delete cached data, speech, or reset devotion progress</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <button class="btn-danger-action" id="btn-delete-journal-entries" style="justify-content: flex-start;">
+                <span>✍️</span> Delete All Journal Entries
+              </button>
+              <button class="btn-danger-action" id="btn-delete-images" style="justify-content: flex-start;">
+                <span>📷</span> Delete All Images
+              </button>
+              <button class="btn-danger-action" id="btn-delete-scriptures" style="justify-content: flex-start;">
+                <span>📖</span> Delete Scripture Data
+              </button>
+              <button class="btn-danger-action" id="btn-delete-tts" style="justify-content: flex-start;">
+                <span>🔊</span> Delete Text-to-speech Data
+              </button>
+              <button class="btn-danger-action" id="btn-reset-devotion-progress" style="justify-content: flex-start; background: rgba(239, 68, 68, 0.14);">
+                <span>🔄</span> Reset Devotion Progress
+              </button>
+              <button class="btn-danger-action" id="btn-delete-all-data" style="justify-content: flex-start; background: rgba(239, 68, 68, 0.22); font-weight: 700;">
+                <span>⚠️</span> Delete All Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: APP INFO -->
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 30px;">
+          <p><strong>Daily Devotions</strong> • <span style="color: var(--accent-gold); font-weight: 600;">v1.0 (Stable Release)</span></p>
+          <p>Daily Reading Plan with Scripture & Audio</p>
+          <p style="margin-top: 4px;">Scriptures powered by HelloAO Bible API</p>
+          <p style="margin-top: 2px;">Offline PWA • Built for Mobile</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-nav="home">
+        <span class="nav-icon">🏠</span>
+        <span>Today</span>
+      </button>
+      <button class="nav-item" data-nav="devotion">
+        <span class="nav-icon">📖</span>
+        <span>Devotion</span>
+      </button>
+      <button class="nav-item" data-nav="calendar">
+        <span class="nav-icon">📅</span>
+        <span>Calendar</span>
+      </button>
+      <button class="nav-item" data-nav="journal">
+        <span class="nav-icon">✍️</span>
+        <span>Journal</span>
+      </button>
+      <button class="nav-item" data-nav="settings">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- ==========================================
+         MODALS & SHEETS
+         ========================================== -->
+
+    <!-- Translation Version Picker Modal (Requirement 13) -->
+    <div class="modal-backdrop" id="modal-version-picker">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">Select Bible Translation</div>
+          <button class="sheet-close-btn" id="btn-close-version-modal">✕</button>
+        </div>
+        <div class="version-list" id="version-options-list">
+          <!-- Populated from bibleService.translations -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Alarm Ringing & Snooze Modal (Requirement 4) -->
+    <div class="modal-backdrop" id="modal-alarm-ring">
+      <div class="modal-sheet" style="max-height: 90vh;">
+        <div class="sheet-handle"></div>
+        <div class="alarm-ringing-card">
+          <div class="ringing-bell">🔔</div>
+          <h2 class="ringing-title" id="alarm-modal-title">Time for Your Devotion!</h2>
+          <p class="ringing-quote" id="alarm-modal-quote">
+            “Your word is a lamp to my feet and a light to my path.”<br>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">— Psalms 119:105</span>
+          </p>
+          
+          <div class="ringing-buttons">
+            <button class="btn-primary-action" id="btn-alarm-start-devotion">
+              <span>📖</span> Start Today’s Devotion
+            </button>
+
+            <!-- Snooze Options -->
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin: 12px 0 6px 0; text-align: left;">
+              Snooze for Later:
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+              <button class="btn-snooze-opt" data-snooze="5">Snooze 5 Min</button>
+              <button class="btn-snooze-opt" data-snooze="10">Snooze 10 Min</button>
+              <button class="btn-snooze-opt" data-snooze="15">Snooze 15 Min</button>
+              <button class="btn-snooze-opt" data-snooze="30">Snooze 30 Min</button>
+            </div>
+
+            <!-- Custom Later Time Picker -->
+            <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+              <input type="time" class="time-input" id="custom-snooze-time" style="flex: 1;">
+              <button class="btn-snooze-opt" id="btn-custom-snooze" style="padding: 8px 14px;">Set Custom</button>
+            </div>
+
+            <button class="unmark-btn" id="btn-dismiss-alarm" style="margin-top: 16px;">
+              Dismiss for Today
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div class="modal-backdrop" id="modal-lightbox">
+      <div class="modal-sheet" style="padding: 16px; background: #000000;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="color: #ffffff; font-weight: 700; font-size: 0.95rem;" id="lightbox-date">Devotion Image</div>
+          <button class="sheet-close-btn" id="btn-close-lightbox">✕</button>
+        </div>
+        <img id="lightbox-img" src="" alt="Devotion" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: var(--radius-md);">
+        <p id="lightbox-caption" style="color: #cbd5e1; font-size: 0.85rem; margin-top: 12px; line-height: 1.5;"></p>
+      </div>
+    </div>
+
+    <!-- Deletion Scope Selection Modal (Requirement 5) -->
+    <div class="modal-backdrop" id="modal-scope-delete">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div style="padding: 8px 4px 18px 4px;">
+          <div style="font-size: 2.2rem; text-align: center; margin-bottom: 8px;">🗑️</div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); text-align: center; margin-bottom: 6px;" id="scope-delete-title">Select Deletion Scope</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); text-align: center; margin-bottom: 16px;" id="scope-delete-desc">Choose which data you would like to delete:</p>
+
+          <div class="scope-choice-box selected" id="scope-box-month">
+            <input type="radio" name="deleteScope" id="radio-scope-month" value="month" class="scope-radio" checked>
+            <label for="radio-scope-month" style="cursor: pointer; flex: 1;">
+              <div class="scope-title" id="scope-month-name">Currently Selected Month (November 2026)</div>
+              <div class="scope-desc">Deletes data only for the active month</div>
+            </label>
+          </div>
+
+          <div class="scope-choice-box" id="scope-box-all">
+            <input type="radio" name="deleteScope" id="radio-scope-all" value="all" class="scope-radio">
+            <label for="radio-scope-all" style="cursor: pointer; flex: 1;">
+              <div class="scope-title">All Data (All Months)</div>
+              <div class="scope-desc">Deletes this data type across all months and history</div>
+            </label>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 18px;">
+            <button class="btn-danger-action" id="btn-scope-continue" style="padding: 13px; font-size: 0.9rem; justify-content: center; font-weight: 700;">
+              Continue
+            </button>
+            <button class="btn-secondary-action" id="btn-scope-cancel" style="padding: 12px; font-size: 0.9rem; justify-content: center;">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Confirmation Modal -->
+    <div class="modal-backdrop" id="modal-confirm">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div style="text-align: center; padding: 10px 8px 18px 8px;">
+          <div style="font-size: 2.5rem; margin-bottom: 10px;" id="confirm-modal-icon">⚠️</div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;" id="confirm-modal-title">Confirm Action</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px;" id="confirm-modal-desc">Are you sure you want to proceed?</p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-danger-action" id="btn-confirm-proceed" style="padding: 13px; font-size: 0.9rem; justify-content: center; font-weight: 700;">
+              Yes, Proceed
+            </button>
+            <button class="btn-secondary-action" id="btn-confirm-cancel" style="padding: 12px; font-size: 0.9rem; justify-content: center;">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="./js/store.js"></script>
+  <script src="./js/tts-service.js"></script>
+  <script src="./js/bible-service.js"></script>
+  <script src="./js/alarm-service.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "daily-devotions",
+  "version": "1.0.0",
+  "description": "Daily Devotions - Installable PWA with Scripture, Journal, Alarms, TTS Read Aloud and Offline Support",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx serve -s . -l 8080"
+  },
+  "keywords": ["pwa", "bible", "devotions", "faith", "helloao", "tts"],
+  "author": "Daily Devotions",
+  "license": "MIT"
+}

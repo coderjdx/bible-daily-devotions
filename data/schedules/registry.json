@@ -1,0 +1,16 @@
+[
+  {
+    "key": "2026-11",
+    "name": "November 2026",
+    "path": "./data/schedules/2026-11.json",
+    "daysCount": 30,
+    "isDefault": true
+  },
+  {
+    "key": "2026-12",
+    "name": "December 2026",
+    "path": "./data/schedules/2026-12.json",
+    "daysCount": 31,
+    "isDefault": false
+  }
+]

@@ -1,0 +1,11 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies and caches
+node_modules/
+__pycache__/
+*.pyc
+
+# Chrome temporary profiles used during testing
+/tmp/chrome_test_profile*

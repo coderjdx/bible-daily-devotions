@@ -1,0 +1,971 @@
+{
+  "title": "Daily Devotions Guide - December 2026",
+  "readingPlan": "The BIBLE with Nicky and Pippa Gumbel",
+  "monthKey": "2026-12",
+  "monthName": "December 2026",
+  "year": 2026,
+  "month": 12,
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-12-01",
+      "scriptures": "Psalms 137, 1 John 1, Daniel 6",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 335,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 137,
+          "label": "Psalms 137",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 1,
+          "label": "1 John 1",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 6,
+          "label": "Daniel 6",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-12-02",
+      "scriptures": "Psalms 138, 1 John 1, Daniel 6",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 336,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 138,
+          "label": "Psalms 138",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 1,
+          "label": "1 John 1",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 6,
+          "label": "Daniel 6",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-12-03",
+      "scriptures": "Psalms 139, 1 John 1, Daniel 6",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 337,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 139,
+          "label": "Psalms 139",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 1,
+          "label": "1 John 1",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 6,
+          "label": "Daniel 6",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-12-04",
+      "scriptures": "Psalms 140, 1 John 1, Daniel 6",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 338,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 140,
+          "label": "Psalms 140",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 1,
+          "label": "1 John 1",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 6,
+          "label": "Daniel 6",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-12-05",
+      "scriptures": "Psalms 141, 1 John 1, Daniel 7",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 339,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 141,
+          "label": "Psalms 141",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 1,
+          "label": "1 John 1",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 7,
+          "label": "Daniel 7",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-12-06",
+      "scriptures": "Psalms 142, 1 John 2, Daniel 7",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 340,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 142,
+          "label": "Psalms 142",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 7,
+          "label": "Daniel 7",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-12-07",
+      "scriptures": "Psalms 143, 1 John 2, Daniel 7",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 341,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 143,
+          "label": "Psalms 143",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 7,
+          "label": "Daniel 7",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 8,
+      "date": "2026-12-08",
+      "scriptures": "Psalms 144, 1 John 2, Daniel 7",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 342,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 144,
+          "label": "Psalms 144",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 7,
+          "label": "Daniel 7",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 9,
+      "date": "2026-12-09",
+      "scriptures": "Psalms 145, 1 John 2, Daniel 7",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 343,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 145,
+          "label": "Psalms 145",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 7,
+          "label": "Daniel 7",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 10,
+      "date": "2026-12-10",
+      "scriptures": "Psalms 146, 1 John 2, Daniel 8",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 344,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 146,
+          "label": "Psalms 146",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 8,
+          "label": "Daniel 8",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 11,
+      "date": "2026-12-11",
+      "scriptures": "Psalms 147, 1 John 2, Daniel 8",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 345,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 147,
+          "label": "Psalms 147",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 2,
+          "label": "1 John 2",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 8,
+          "label": "Daniel 8",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 12,
+      "date": "2026-12-12",
+      "scriptures": "Psalms 148, 1 John 3, Daniel 8",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 346,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 148,
+          "label": "Psalms 148",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 8,
+          "label": "Daniel 8",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 13,
+      "date": "2026-12-13",
+      "scriptures": "Psalms 149, 1 John 3, Daniel 8",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 347,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 149,
+          "label": "Psalms 149",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 8,
+          "label": "Daniel 8",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 14,
+      "date": "2026-12-14",
+      "scriptures": "Psalms 150, 1 John 3, Daniel 8",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 348,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 8,
+          "label": "Daniel 8",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 15,
+      "date": "2026-12-15",
+      "scriptures": "Psalms 150, 1 John 3, Daniel 9",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 349,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 9,
+          "label": "Daniel 9",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 16,
+      "date": "2026-12-16",
+      "scriptures": "Psalms 150, 1 John 3, Daniel 9",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 350,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 9,
+          "label": "Daniel 9",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 17,
+      "date": "2026-12-17",
+      "scriptures": "Psalms 150, 1 John 3, Daniel 9",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 351,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 3,
+          "label": "1 John 3",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 9,
+          "label": "Daniel 9",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 18,
+      "date": "2026-12-18",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 9",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 352,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 9,
+          "label": "Daniel 9",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 19,
+      "date": "2026-12-19",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 9",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 353,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 9,
+          "label": "Daniel 9",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 20,
+      "date": "2026-12-20",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 10",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 354,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 10,
+          "label": "Daniel 10",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 21,
+      "date": "2026-12-21",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 10",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 355,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 10,
+          "label": "Daniel 10",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 22,
+      "date": "2026-12-22",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 10",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 356,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 10,
+          "label": "Daniel 10",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 23,
+      "date": "2026-12-23",
+      "scriptures": "Psalms 150, 1 John 4, Daniel 10",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 357,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 4,
+          "label": "1 John 4",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 10,
+          "label": "Daniel 10",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 24,
+      "date": "2026-12-24",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 10",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 358,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 10,
+          "label": "Daniel 10",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 25,
+      "date": "2026-12-25",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 11",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 359,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 11,
+          "label": "Daniel 11",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 26,
+      "date": "2026-12-26",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 11",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 360,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 11,
+          "label": "Daniel 11",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 27,
+      "date": "2026-12-27",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 11",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 361,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 11,
+          "label": "Daniel 11",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 28,
+      "date": "2026-12-28",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 11",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 362,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 11,
+          "label": "Daniel 11",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 29,
+      "date": "2026-12-29",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 11",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 363,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 11,
+          "label": "Daniel 11",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 30,
+      "date": "2026-12-30",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 12",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 364,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 12,
+          "label": "Daniel 12",
+          "section": "Old Testament"
+        }
+      ]
+    },
+    {
+      "day": 31,
+      "date": "2026-12-31",
+      "scriptures": "Psalms 150, 1 John 5, Daniel 12",
+      "count": 3,
+      "time": "12m 30s",
+      "dayOfYear": 365,
+      "passages": [
+        {
+          "bookId": "PSA",
+          "bookName": "Psalms",
+          "chapter": 150,
+          "label": "Psalms 150",
+          "section": "Wisdom"
+        },
+        {
+          "bookId": "1JN",
+          "bookName": "1 John",
+          "chapter": 5,
+          "label": "1 John 5",
+          "section": "New Testament"
+        },
+        {
+          "bookId": "DAN",
+          "bookName": "Daniel",
+          "chapter": 12,
+          "label": "Daniel 12",
+          "section": "Old Testament"
+        }
+      ]
+    }
+  ]
+}
