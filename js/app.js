@@ -1054,17 +1054,31 @@
 
     // Confirmation Modal handlers
     if (el.btnConfirmProceed) {
-      el.btnConfirmProceed.addEventListener('click', async () => {
+      el.btnConfirmProceed.addEventListener('click', async (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         if (confirmCallback) {
           const fn = confirmCallback;
           confirmCallback = null;
-          await fn();
+          try {
+            await fn();
+          } catch (err) {
+            console.error('Error executing confirmed action:', err);
+          }
         }
         closeConfirmModal();
       });
     }
     if (el.btnConfirmCancel) {
-      el.btnConfirmCancel.addEventListener('click', closeConfirmModal);
+      el.btnConfirmCancel.addEventListener('click', (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        closeConfirmModal();
+      });
     }
     if (el.modalConfirm) {
       el.modalConfirm.addEventListener('click', (e) => {
@@ -1136,7 +1150,11 @@
     }
 
     if (el.btnLightboxDelete) {
-      el.btnLightboxDelete.addEventListener('click', () => {
+      el.btnLightboxDelete.addEventListener('click', (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         if (!activeImageItem) return;
         const itemToDelete = activeImageItem;
         showConfirmModal(
@@ -1179,7 +1197,11 @@
     }
 
     if (el.btnJournalPanelDelete) {
-      el.btnJournalPanelDelete.addEventListener('click', () => {
+      el.btnJournalPanelDelete.addEventListener('click', (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         if (!activeJournalItem) return;
         const itemToDelete = activeJournalItem;
         showConfirmModal(
@@ -1882,7 +1904,11 @@
     reader.readAsDataURL(file);
   }
 
-  async function handleImageRemove() {
+  async function handleImageRemove(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (state.isCurrentDayLocked) {
       showToast('Journal is locked because this day is completed 🔒');
       return;

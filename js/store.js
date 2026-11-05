@@ -183,7 +183,7 @@ class DevotionStore {
     try {
       const store = await this.getStore('notes', 'readwrite');
       if (store) {
-        return new Promise((res) => {
+        await new Promise((res) => {
           const req = store.delete(dateStr);
           req.onsuccess = () => res(true);
           req.onerror = () => res(false);
@@ -192,7 +192,9 @@ class DevotionStore {
     } catch (e) {
       console.warn('Fallback removeNote', e);
     }
-    localStorage.removeItem(`note_${dateStr}`);
+    try {
+      localStorage.removeItem(`note_${dateStr}`);
+    } catch (e) {}
     return true;
   }
 
@@ -273,7 +275,7 @@ class DevotionStore {
     try {
       const store = await this.getStore('images', 'readwrite');
       if (store) {
-        return new Promise((res) => {
+        await new Promise((res) => {
           const req = store.delete(dateStr);
           req.onsuccess = () => res(true);
           req.onerror = () => res(false);
@@ -282,7 +284,9 @@ class DevotionStore {
     } catch (e) {
       console.warn('Fallback removeImage', e);
     }
-    localStorage.removeItem(`img_${dateStr}`);
+    try {
+      localStorage.removeItem(`img_${dateStr}`);
+    } catch (e) {}
     return true;
   }
 
@@ -452,6 +456,12 @@ class DevotionStore {
    * @param {string|null} scopeMonth - e.g. "2026-11" or null for all months
    */
   async deleteJournalEntries(scopeMonth = null) {
+    let datesToDelete = [];
+    if (scopeMonth) {
+      const allNotes = await this.getAllNotes();
+      datesToDelete = allNotes.filter(n => n.date && n.date.startsWith(scopeMonth)).map(n => n.date);
+    }
+
     try {
       const store = await this.getStore('notes', 'readwrite');
       if (store) {
@@ -461,13 +471,17 @@ class DevotionStore {
             req.onsuccess = () => res(true);
             req.onerror = () => res(false);
           });
-        } else {
-          const allNotes = await this.getAllNotes();
-          for (const n of allNotes) {
-            if (n.date && n.date.startsWith(scopeMonth)) {
-              store.delete(n.date);
-            }
-          }
+        } else if (datesToDelete.length > 0) {
+          await new Promise((res) => {
+            let pending = datesToDelete.length;
+            datesToDelete.forEach(d => {
+              const req = store.delete(d);
+              req.onsuccess = req.onerror = () => {
+                pending--;
+                if (pending <= 0) res(true);
+              };
+            });
+          });
         }
       }
     } catch (e) {
@@ -492,6 +506,12 @@ class DevotionStore {
    * @param {string|null} scopeMonth - e.g. "2026-11" or null for all months
    */
   async deleteImages(scopeMonth = null) {
+    let datesToDelete = [];
+    if (scopeMonth) {
+      const allImgs = await this.getAllImages();
+      datesToDelete = allImgs.filter(img => img.date && img.date.startsWith(scopeMonth)).map(img => img.date);
+    }
+
     try {
       const store = await this.getStore('images', 'readwrite');
       if (store) {
@@ -501,13 +521,17 @@ class DevotionStore {
             req.onsuccess = () => res(true);
             req.onerror = () => res(false);
           });
-        } else {
-          const allImgs = await this.getAllImages();
-          for (const img of allImgs) {
-            if (img.date && img.date.startsWith(scopeMonth)) {
-              store.delete(img.date);
-            }
-          }
+        } else if (datesToDelete.length > 0) {
+          await new Promise((res) => {
+            let pending = datesToDelete.length;
+            datesToDelete.forEach(d => {
+              const req = store.delete(d);
+              req.onsuccess = req.onerror = () => {
+                pending--;
+                if (pending <= 0) res(true);
+              };
+            });
+          });
         }
       }
     } catch (e) {
@@ -544,15 +568,27 @@ class DevotionStore {
           // If month specified, delete chapters that belong to that month schedule
           const sched = window.bibleService ? window.bibleService.getMonthSchedule(scopeMonth) : null;
           if (sched && sched.days) {
-            for (const d of sched.days) {
-              for (const p of d.passages) {
-                store.delete(`BSB_${p.bookId}_${p.chapter}`);
-                store.delete(`tgl_bib_${p.bookId}_${p.chapter}`);
-                store.delete(`ENGWEBP_${p.bookId}_${p.chapter}`);
-                store.delete(`eng_kjv_${p.bookId}_${p.chapter}`);
-                store.delete(`tgl_ulb_${p.bookId}_${p.chapter}`);
+            await new Promise((res) => {
+              const keys = [];
+              for (const d of sched.days) {
+                for (const p of d.passages) {
+                  keys.push(`BSB_${p.bookId}_${p.chapter}`);
+                  keys.push(`tgl_bib_${p.bookId}_${p.chapter}`);
+                  keys.push(`ENGWEBP_${p.bookId}_${p.chapter}`);
+                  keys.push(`eng_kjv_${p.bookId}_${p.chapter}`);
+                  keys.push(`tgl_ulb_${p.bookId}_${p.chapter}`);
+                }
               }
-            }
+              let pending = keys.length;
+              if (pending === 0) return res(true);
+              keys.forEach(k => {
+                const req = store.delete(k);
+                req.onsuccess = req.onerror = () => {
+                  pending--;
+                  if (pending <= 0) res(true);
+                };
+              });
+            });
           } else {
             await new Promise((res) => {
               const req = store.clear();
@@ -573,6 +609,12 @@ class DevotionStore {
    * @param {string|null} scopeMonth - e.g. "2026-11" or null for all months
    */
   async deleteTTSData(scopeMonth = null) {
+    let idsToDelete = [];
+    if (scopeMonth) {
+      const all = await this.getAllTTSAudio();
+      idsToDelete = all.filter(item => item.id && item.id.includes(scopeMonth)).map(item => item.id);
+    }
+
     try {
       const store = await this.getStore('tts_audio_cache', 'readwrite');
       if (store) {
@@ -582,13 +624,17 @@ class DevotionStore {
             req.onsuccess = () => res(true);
             req.onerror = () => res(false);
           });
-        } else {
-          const all = await this.getAllTTSAudio();
-          for (const item of all) {
-            if (item.id && item.id.includes(scopeMonth)) {
-              store.delete(item.id);
-            }
-          }
+        } else if (idsToDelete.length > 0) {
+          await new Promise((res) => {
+            let pending = idsToDelete.length;
+            idsToDelete.forEach(id => {
+              const req = store.delete(id);
+              req.onsuccess = req.onerror = () => {
+                pending--;
+                if (pending <= 0) res(true);
+              };
+            });
+          });
         }
       }
     } catch (e) {
@@ -602,6 +648,12 @@ class DevotionStore {
    * @param {string|null} scopeMonth - e.g. "2026-11" or null for all months
    */
   async resetDevotionProgress(scopeMonth = null) {
+    let datesToDelete = [];
+    if (scopeMonth) {
+      const allComp = await this.getAllCompletions();
+      datesToDelete = allComp.filter(c => c.date && c.date.startsWith(scopeMonth)).map(c => c.date);
+    }
+
     try {
       // A. Delete completions
       const compStore = await this.getStore('completions', 'readwrite');
@@ -612,13 +664,17 @@ class DevotionStore {
             req.onsuccess = () => res(true);
             req.onerror = () => res(false);
           });
-        } else {
-          const allComp = await this.getAllCompletions();
-          for (const c of allComp) {
-            if (c.date && c.date.startsWith(scopeMonth)) {
-              compStore.delete(c.date);
-            }
-          }
+        } else if (datesToDelete.length > 0) {
+          await new Promise((res) => {
+            let pending = datesToDelete.length;
+            datesToDelete.forEach(d => {
+              const req = compStore.delete(d);
+              req.onsuccess = req.onerror = () => {
+                pending--;
+                if (pending <= 0) res(true);
+              };
+            });
+          });
         }
       }
     } catch (e) {
@@ -651,10 +707,21 @@ class DevotionStore {
     await this.deleteScriptureData(null);
     await this.deleteTTSData(null);
 
-    // Clear all settings
+    // Clear settings from IDB if present
+    try {
+      const settingsStore = await this.getStore('settings', 'readwrite');
+      if (settingsStore) {
+        await new Promise((res) => {
+          const req = settingsStore.clear();
+          req.onsuccess = req.onerror = () => res(true);
+        });
+      }
+    } catch (e) {}
+
+    // Clear all localStorage
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('setting_')) {
+      if (k && (k.startsWith('setting_') || k.startsWith('note_') || k.startsWith('img_') || k.startsWith('completion_') || k.startsWith('tts_'))) {
         localStorage.removeItem(k);
       }
     }

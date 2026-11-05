@@ -249,7 +249,7 @@ html, body {
 /* Views Management */
 .app-view {
   display: none;
-  padding: 16px 16px 88px 16px;
+  padding: 16px 16px calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 24px) 16px;
   animation: fadeIn 0.25s ease-out;
 }
 
@@ -268,14 +268,15 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--nav-height);
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--nav-height);
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
-  padding: 0 8px;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding: 4px 8px env(safe-area-inset-bottom, 0px) 8px;
+  box-sizing: border-box;
   z-index: 60;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -283,12 +284,14 @@ html, body {
 
 .nav-item {
   flex: 1;
+  height: 56px;
+  max-height: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 6px 0;
+  gap: 2px;
+  padding: 4px 0 6px 0;
   color: var(--text-muted);
   text-decoration: none;
   background: none;
@@ -302,6 +305,7 @@ html, body {
 
 .nav-item .nav-icon {
   font-size: 1.35rem;
+  line-height: 1;
   transition: transform 0.2s ease;
 }
 
@@ -311,14 +315,14 @@ html, body {
 }
 
 .nav-item.active .nav-icon {
-  transform: translateY(-2px);
+  transform: none;
   filter: drop-shadow(0 2px 6px var(--accent-gold-glow));
 }
 
 .nav-item.active::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 2px;
   width: 18px;
   height: 3px;
   background: var(--accent-gold);
@@ -1703,12 +1707,13 @@ html, body {
 
 .journal-panel-actions,
 .image-panel-actions {
-  padding: 14px 20px;
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   align-items: center;
   gap: 12px;
+  box-sizing: border-box;
 }
 
 /* SOAP Reflection Boxes in Floating Panel */
@@ -1907,10 +1912,19 @@ html, body {
   z-index: 999;
   align-items: flex-end;
   justify-content: center;
+  touch-action: manipulation;
 }
 
 .modal-backdrop.active {
   display: flex;
+}
+
+#modal-scope-delete {
+  z-index: 1050 !important;
+}
+
+#modal-confirm {
+  z-index: 1200 !important;
 }
 
 .modal-sheet {
@@ -1921,10 +1935,21 @@ html, body {
   border-top-right-radius: var(--radius-lg);
   border: 1px solid var(--border-subtle);
   border-bottom: none;
-  padding: 20px 18px 36px 18px;
-  max-height: 85vh;
+  padding: 20px 18px calc(24px + env(safe-area-inset-bottom, 0px)) 18px;
+  max-height: 88vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: slideUp 0.28s ease-out;
+  box-sizing: border-box;
+}
+
+.journal-panel-actions button,
+.image-panel-actions button,
+.modal-sheet .btn-danger-action,
+.modal-sheet .btn-secondary-action,
+.modal-sheet .btn-primary {
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 @keyframes slideUp {
@@ -2447,7 +2472,7 @@ input:checked + .slider:before {
 /* Floating Audio Player Bar */
 .floating-tts-player {
   position: fixed;
-  bottom: 74px;
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 24px);
@@ -2694,6 +2719,8 @@ input:checked + .slider:before {
 
   .nav-item {
     flex: none;
+    height: auto;
+    max-height: none;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
