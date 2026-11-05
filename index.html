@@ -22,13 +22,6 @@
 </head>
 <body>
 
-  <!-- Landscape warning on mobile -->
-  <div id="landscape-warning">
-    <div class="rotate-icon">📱</div>
-    <h2 style="font-size: 1.2rem; margin-bottom: 8px;">Portrait Mode Preferred</h2>
-    <p style="font-size: 0.9rem; color: #94a3b8; max-width: 280px;">Please rotate your device to portrait orientation for the best devotional reading experience.</p>
-  </div>
-
   <!-- Toast notification -->
   <div id="app-toast">
     <span id="toast-icon">✓</span>
@@ -70,137 +63,143 @@
            VIEW 1: HOME SCREEN
            ========================================== -->
       <section class="app-view active" id="view-home">
-        <!-- Greeting & Date -->
-        <div class="greeting-section">
-          <div class="greeting-date" id="home-greeting-date">
-            <span>📅</span> <span id="home-date-str">Tuesday, November 3, 2026</span>
-          </div>
-          <h1 class="greeting-title" id="home-greeting-title">Good Morning, Champion!</h1>
-          <!-- Random BSB Scripture Rolodex on the Importance of God's Word -->
-          <div class="greeting-rolodex-card" id="home-rolodex-box">
-            <span class="rolodex-quote-mark">“</span>
-            <div class="rolodex-verse-text" id="home-rolodex-text">
-              Your word is a lamp to my feet and a light to my path.
+        <div class="home-responsive-grid">
+          <div class="home-primary-col">
+            <!-- Greeting & Date -->
+            <div class="greeting-section">
+              <div class="greeting-date" id="home-greeting-date">
+                <span>📅</span> <span id="home-date-str">Tuesday, November 3, 2026</span>
+              </div>
+              <h1 class="greeting-title" id="home-greeting-title">Good Morning, Champion!</h1>
+              <!-- Random BSB Scripture Rolodex on the Importance of God's Word -->
+              <div class="greeting-rolodex-card" id="home-rolodex-box">
+                <span class="rolodex-quote-mark">“</span>
+                <div class="rolodex-verse-text" id="home-rolodex-text">
+                  Your word is a lamp to my feet and a light to my path.
+                </div>
+                <div class="rolodex-bottom-row">
+                  <span class="rolodex-reference" id="home-rolodex-ref">Psalm 119:105 (BSB)</span>
+                  <button class="rolodex-shuffle-btn" id="btn-shuffle-rolodex" title="Read another verse on God's Word">
+                    <span>🎲</span> Random Verse
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="rolodex-bottom-row">
-              <span class="rolodex-reference" id="home-rolodex-ref">Psalm 119:105 (BSB)</span>
-              <button class="rolodex-shuffle-btn" id="btn-shuffle-rolodex" title="Read another verse on God's Word">
-                <span>🎲</span> Random Verse
+
+            <!-- Today's Devotion Hero Card -->
+            <div class="hero-card">
+              <div class="hero-badge-row">
+                <span class="hero-day-tag" id="hero-day-tag">✨ Day 3 of 30</span>
+                <span class="hero-status-pill incomplete" id="hero-status-pill">● Incomplete</span>
+              </div>
+              <h2 class="hero-title" id="hero-title">Today’s Devotion Reading</h2>
+              <div class="hero-scriptures" id="hero-scriptures">
+                Psalms 119:153-160, Hebrews 4:14-16 ; 5:1-10, Ezekiel 1 ; 2 ; 3
+              </div>
+              <div class="hero-meta-row">
+                <div class="meta-item">
+                  <span>⏱️</span> <span id="hero-time">13m 41s</span>
+                </div>
+                <div class="meta-item">
+                  <span>📖</span> <span id="hero-passages-count">6 Passages</span>
+                </div>
+                <div class="meta-item">
+                  <span>🗓️</span> <span id="hero-day-of-year">Day 307</span>
+                </div>
+              </div>
+              <button class="btn-primary-action" id="btn-hero-action">
+                <span id="hero-action-icon">📖</span>
+                <span id="hero-action-text">Start Today’s Devotion</span>
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Today's Devotion Hero Card -->
-        <div class="hero-card">
-          <div class="hero-badge-row">
-            <span class="hero-day-tag" id="hero-day-tag">✨ Day 3 of 30</span>
-            <span class="hero-status-pill incomplete" id="hero-status-pill">● Incomplete</span>
-          </div>
-          <h2 class="hero-title" id="hero-title">Today’s Devotion Reading</h2>
-          <div class="hero-scriptures" id="hero-scriptures">
-            Psalms 119:153-160, Hebrews 4:14-16 ; 5:1-10, Ezekiel 1 ; 2 ; 3
-          </div>
-          <div class="hero-meta-row">
-            <div class="meta-item">
-              <span>⏱️</span> <span id="hero-time">13m 41s</span>
+          <div class="home-secondary-col">
+            <!-- Progress & Streak Dashboard (Requirement 12) -->
+            <div class="section-heading">
+              <span>Monthly Progress & Streaks</span>
+              <span style="font-size: 0.75rem; color: var(--accent-gold-light);">November 2026</span>
             </div>
-            <div class="meta-item">
-              <span>📖</span> <span id="hero-passages-count">6 Passages</span>
-            </div>
-            <div class="meta-item">
-              <span>🗓️</span> <span id="hero-day-of-year">Day 307</span>
-            </div>
-          </div>
-          <button class="btn-primary-action" id="btn-hero-action">
-            <span id="hero-action-icon">📖</span>
-            <span id="hero-action-text">Start Today’s Devotion</span>
-          </button>
-        </div>
+            <div class="stats-grid">
+              <!-- Streak Flame Indicator -->
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-icon">🔥</span>
+                  <span class="stat-tag gold">Active</span>
+                </div>
+                <div class="stat-value" id="stat-streak-count">0</div>
+                <div class="stat-label">Day Devotion Streak</div>
+              </div>
 
-        <!-- Progress & Streak Dashboard (Requirement 12) -->
-        <div class="section-heading">
-          <span>Monthly Progress & Streaks</span>
-          <span style="font-size: 0.75rem; color: var(--accent-gold-light);">November 2026</span>
-        </div>
-        <div class="stats-grid">
-          <!-- Streak Flame Indicator -->
-          <div class="stat-card">
-            <div class="stat-top">
-              <span class="stat-icon">🔥</span>
-              <span class="stat-tag gold">Active</span>
-            </div>
-            <div class="stat-value" id="stat-streak-count">0</div>
-            <div class="stat-label">Day Devotion Streak</div>
-          </div>
+              <!-- Completed this Month -->
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-icon">✅</span>
+                  <span class="stat-tag green" id="stat-completed-pct">0%</span>
+                </div>
+                <div class="stat-value" id="stat-completed-count">0 / 30</div>
+                <div class="stat-label">Days Completed</div>
+              </div>
 
-          <!-- Completed this Month -->
-          <div class="stat-card">
-            <div class="stat-top">
-              <span class="stat-icon">✅</span>
-              <span class="stat-tag green" id="stat-completed-pct">0%</span>
-            </div>
-            <div class="stat-value" id="stat-completed-count">0 / 30</div>
-            <div class="stat-label">Days Completed</div>
-          </div>
+              <!-- Missed this Month -->
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-icon">⏳</span>
+                  <span class="stat-tag red">Catch Up</span>
+                </div>
+                <div class="stat-value" id="stat-missed-count">0</div>
+                <div class="stat-label">Days Missed</div>
+              </div>
 
-          <!-- Missed this Month -->
-          <div class="stat-card">
-            <div class="stat-top">
-              <span class="stat-icon">⏳</span>
-              <span class="stat-tag red">Catch Up</span>
-            </div>
-            <div class="stat-value" id="stat-missed-count">0</div>
-            <div class="stat-label">Days Missed</div>
-          </div>
-
-          <!-- Recovered Counter (Requirement 12) -->
-          <div class="stat-card">
-            <div class="stat-top">
-              <span class="stat-icon">✨</span>
-              <span class="stat-tag purple">Recovered</span>
-            </div>
-            <div class="stat-value" id="stat-recovered-count">0</div>
-            <div class="stat-label">Completed After Date</div>
-          </div>
-        </div>
-
-        <!-- Quick Access Navigation Cards -->
-        <div class="section-heading">
-          <span>Quick Actions</span>
-        </div>
-        <div class="quick-cards">
-          <div class="quick-card" id="card-nav-calendar">
-            <div class="quick-left">
-              <div class="quick-icon-box">📅</div>
-              <div>
-                <div class="quick-title">Monthly Devotion Calendar</div>
-                <div class="quick-desc">Track completions, review past days & catch up</div>
+              <!-- Recovered Counter (Requirement 12) -->
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-icon">✨</span>
+                  <span class="stat-tag purple">Recovered</span>
+                </div>
+                <div class="stat-value" id="stat-recovered-count">0</div>
+                <div class="stat-label">Completed After Date</div>
               </div>
             </div>
-            <span class="quick-arrow">›</span>
-          </div>
 
-          <div class="quick-card" id="card-nav-journal">
-            <div class="quick-left">
-              <div class="quick-icon-box">✍️</div>
-              <div>
-                <div class="quick-title">Devotion Journal & Photo Gallery</div>
-                <div class="quick-desc">Reflections, prayers & spiritual memories</div>
+            <!-- Quick Access Navigation Cards -->
+            <div class="section-heading">
+              <span>Quick Actions</span>
+            </div>
+            <div class="quick-cards">
+              <div class="quick-card" id="card-nav-calendar">
+                <div class="quick-left">
+                  <div class="quick-icon-box">📅</div>
+                  <div>
+                    <div class="quick-title">Monthly Devotion Calendar</div>
+                    <div class="quick-desc">Track completions, review past days & catch up</div>
+                  </div>
+                </div>
+                <span class="quick-arrow">›</span>
+              </div>
+
+              <div class="quick-card" id="card-nav-journal">
+                <div class="quick-left">
+                  <div class="quick-icon-box">✍️</div>
+                  <div>
+                    <div class="quick-title">Devotion Journal & Photo Gallery</div>
+                    <div class="quick-desc">Reflections, prayers & spiritual memories</div>
+                  </div>
+                </div>
+                <span class="quick-arrow">›</span>
+              </div>
+
+              <div class="quick-card" id="card-nav-settings">
+                <div class="quick-left">
+                  <div class="quick-icon-box">⚙️</div>
+                  <div>
+                    <div class="quick-title">Settings & Data Management</div>
+                    <div class="quick-desc">Alarms, push reminders, offline cache & backup</div>
+                  </div>
+                </div>
+                <span class="quick-arrow">›</span>
               </div>
             </div>
-            <span class="quick-arrow">›</span>
-          </div>
-
-          <div class="quick-card" id="card-nav-settings">
-            <div class="quick-left">
-              <div class="quick-icon-box">⚙️</div>
-              <div>
-                <div class="quick-title">Settings & Data Management</div>
-                <div class="quick-desc">Alarms, push reminders, offline cache & backup</div>
-              </div>
-            </div>
-            <span class="quick-arrow">›</span>
           </div>
         </div>
       </section>
@@ -226,76 +225,85 @@
           </div>
         </div>
 
-        <!-- Read Aloud Banner (Google TTS) -->
-        <div class="read-aloud-banner" id="devotion-tts-banner">
-          <div class="tts-banner-left">
-            <span class="tts-wave-icon">🔊</span>
-            <div>
-              <div class="tts-banner-title">Read Aloud (Calm Voice)</div>
-              <div class="tts-banner-sub">Google TTS • Calm pace • No verse numbers</div>
+        <!-- Responsive Two-Column Layout on Tablets & Desktops -->
+        <div class="devotion-responsive-grid">
+          <!-- Main Scripture Reading Column -->
+          <div class="devotion-reading-col">
+            <!-- Read Aloud Banner (Google TTS) -->
+            <div class="read-aloud-banner" id="devotion-tts-banner">
+              <div class="tts-banner-left">
+                <span class="tts-wave-icon">🔊</span>
+                <div>
+                  <div class="tts-banner-title">Read Aloud (Calm Voice)</div>
+                  <div class="tts-banner-sub">Google TTS • Calm pace • No verse numbers</div>
+                </div>
+              </div>
+              <button class="btn-tts-listen" id="btn-read-all-tts" title="Listen to all scriptures for today">
+                <span id="btn-read-all-icon">▶️</span> <span id="btn-read-all-text">Read All</span>
+              </button>
             </div>
-          </div>
-          <button class="btn-tts-listen" id="btn-read-all-tts" title="Listen to all scriptures for today">
-            <span id="btn-read-all-icon">▶️</span> <span id="btn-read-all-text">Read All</span>
-          </button>
-        </div>
 
-        <!-- Scripture Passage Quick Jump Tabs -->
-        <div class="passage-tabs" id="passage-tabs">
-          <button class="passage-tab active" data-target="all">All Readings (6)</button>
-        </div>
-
-        <!-- Passages Content Container -->
-        <div id="passages-container">
-          <div class="empty-state-box">
-            <div class="empty-state-icon">📖</div>
-            <p>Loading scriptures...</p>
-          </div>
-        </div>
-
-        <!-- Journal Notes & Reflection Section (Requirement 11) -->
-        <div class="devotion-notes-section">
-          <div class="notes-header">
-            <div class="notes-title">
-              <span>✍️</span> My Notes & Reflection
+            <!-- Scripture Passage Quick Jump Tabs -->
+            <div class="passage-tabs" id="passage-tabs">
+              <button class="passage-tab active" data-target="all">All Readings (6)</button>
             </div>
-            <div class="notes-autosave-badge" id="notes-save-badge">
-              <span>✓</span> Auto-saved
-            </div>
-          </div>
-          <textarea 
-            class="notes-textarea" 
-            id="devotion-notes-input" 
-            placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
 
-          <!-- Image Upload for Today (Requirement 11) -->
-          <div class="devotion-image-box">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photo / Reflection</span>
-              <label class="image-upload-trigger">
-                <span>➕ Add Photo</span>
-                <input type="file" id="devotion-image-file" accept="image/*" style="display: none;">
-              </label>
-            </div>
-            <div id="devotion-image-preview-container" style="display: none;">
-              <div class="image-preview-wrap">
-                <img id="devotion-image-preview" src="" alt="Devotional image" class="image-preview-img">
-                <button class="image-remove-btn" id="btn-remove-image" title="Remove Photo">✕</button>
+            <!-- Passages Content Container -->
+            <div id="passages-container">
+              <div class="empty-state-box">
+                <div class="empty-state-icon">📖</div>
+                <p>Loading scriptures...</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Bottom Mark as Complete Button (Requirement 3) -->
-        <div class="devotion-complete-section" id="devotion-complete-section">
-          <button class="btn-complete-day" id="btn-mark-complete">
-            <span>✓</span> Mark Day as Complete
-          </button>
-          <div class="completed-badge-card" id="completed-badge-card" style="display: none;">
-            <div class="done-icon">🎉</div>
-            <div class="done-text">Devotion Completed!</div>
-            <div class="done-timestamp" id="completed-timestamp-text">Completed on Nov 3, 2026 at 7:32 AM</div>
-            <button class="unmark-btn" id="btn-unmark-complete">Mark as Incomplete</button>
+          <!-- Sticky Devotional Companion Column (Notes, Photo & Completion) -->
+          <div class="devotion-study-col">
+            <!-- Journal Notes & Reflection Section (Requirement 11) -->
+            <div class="devotion-notes-section">
+              <div class="notes-header">
+                <div class="notes-title">
+                  <span>✍️</span> My Notes & Reflection
+                </div>
+                <div class="notes-autosave-badge" id="notes-save-badge">
+                  <span>✓</span> Auto-saved
+                </div>
+              </div>
+              <textarea 
+                class="notes-textarea" 
+                id="devotion-notes-input" 
+                placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
+
+              <!-- Image Upload for Today (Requirement 11) -->
+              <div class="devotion-image-box">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photo / Reflection</span>
+                  <label class="image-upload-trigger">
+                    <span>➕ Add Photo</span>
+                    <input type="file" id="devotion-image-file" accept="image/*" style="display: none;">
+                  </label>
+                </div>
+                <div id="devotion-image-preview-container" style="display: none;">
+                  <div class="image-preview-wrap">
+                    <img id="devotion-image-preview" src="" alt="Devotional image" class="image-preview-img">
+                    <button class="image-remove-btn" id="btn-remove-image" title="Remove Photo">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Mark as Complete Button (Requirement 3) -->
+            <div class="devotion-complete-section" id="devotion-complete-section">
+              <button class="btn-complete-day" id="btn-mark-complete">
+                <span>✓</span> Mark Day as Complete
+              </button>
+              <div class="completed-badge-card" id="completed-badge-card" style="display: none;">
+                <div class="done-icon">🎉</div>
+                <div class="done-text">Devotion Completed!</div>
+                <div class="done-timestamp" id="completed-timestamp-text">Completed on Nov 3, 2026 at 7:32 AM</div>
+                <button class="unmark-btn" id="btn-unmark-complete">Mark as Incomplete</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -320,66 +328,73 @@
            VIEW 3: CALENDAR VIEW
            ========================================== -->
       <section class="app-view" id="view-calendar">
-        <!-- Calendar Header -->
-        <div class="calendar-header-card">
-          <div class="cal-month-row">
-            <div class="cal-month-title">November 2026</div>
-            <span class="hero-day-tag">30 Days Plan</span>
-          </div>
-          <div class="cal-stats-summary">
-            <div class="cal-stat-item">
-              <span class="cal-stat-num" id="cal-completed-num" style="color: var(--accent-green-light);">0</span>
-              <span>Completed</span>
+        <div class="calendar-responsive-grid">
+          <!-- Calendar Days Grid Column -->
+          <div class="calendar-grid-col">
+            <div class="calendar-grid-card">
+              <!-- Weekdays -->
+              <div class="cal-weekdays">
+                <span>SUN</span>
+                <span>MON</span>
+                <span>TUE</span>
+                <span>WED</span>
+                <span>THU</span>
+                <span>FRI</span>
+                <span>SAT</span>
+              </div>
+              <!-- Days Grid -->
+              <div class="cal-days-grid" id="cal-days-grid">
+                <!-- Dynamically generated day cells -->
+              </div>
             </div>
-            <div class="cal-stat-item">
-              <span class="cal-stat-num" id="cal-recovered-num" style="color: var(--accent-purple);">0</span>
-              <span>Recovered</span>
-            </div>
-            <div class="cal-stat-item">
-              <span class="cal-stat-num" id="cal-missed-num" style="color: #f87171;">0</span>
-              <span>Missed</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Calendar Month Grid (Requirement 9) -->
-        <div class="calendar-grid-card">
-          <!-- Weekdays -->
-          <div class="cal-weekdays">
-            <span>SUN</span>
-            <span>MON</span>
-            <span>TUE</span>
-            <span>WED</span>
-            <span>THU</span>
-            <span>FRI</span>
-            <span>SAT</span>
-          </div>
-          <!-- Days Grid -->
-          <div class="cal-days-grid" id="cal-days-grid">
-            <!-- Dynamically generated day cells -->
           </div>
 
-          <!-- Calendar Status Legend -->
-          <div class="cal-legend">
-            <div class="legend-item">
-              <span class="legend-dot" style="background: var(--accent-green);"></span>
-              <span>Completed</span>
+          <!-- Calendar Overview & Legend Column -->
+          <div class="calendar-sidebar-col">
+            <!-- Calendar Header Card with stats -->
+            <div class="calendar-header-card">
+              <div class="cal-month-row">
+                <div class="cal-month-title">November 2026</div>
+                <span class="hero-day-tag">30 Days Plan</span>
+              </div>
+              <div class="cal-stats-summary">
+                <div class="cal-stat-item">
+                  <span class="cal-stat-num" id="cal-completed-num" style="color: var(--accent-green-light);">0</span>
+                  <span>Completed</span>
+                </div>
+                <div class="cal-stat-item">
+                  <span class="cal-stat-num" id="cal-recovered-num" style="color: var(--accent-purple);">0</span>
+                  <span>Recovered</span>
+                </div>
+                <div class="cal-stat-item">
+                  <span class="cal-stat-num" id="cal-missed-num" style="color: #f87171;">0</span>
+                  <span>Missed</span>
+                </div>
+              </div>
             </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: var(--accent-purple);"></span>
-              <span>Recovered</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: var(--accent-red);"></span>
-              <span>Missed</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: var(--accent-gold);"></span>
-              <span>Today</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: rgba(255,255,255,0.2);"></span>
-              <span>Future (Locked)</span>
+
+            <!-- Calendar Status Legend -->
+            <div class="cal-legend cal-legend-panel">
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-green);"></span>
+                <span>Completed</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-purple);"></span>
+                <span>Recovered</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-red);"></span>
+                <span>Missed</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-gold);"></span>
+                <span>Today</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: rgba(255,255,255,0.2);"></span>
+                <span>Future (Locked)</span>
+              </div>
             </div>
           </div>
         </div>
@@ -428,8 +443,11 @@
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Manage alarms, notifications, offline scriptures & app data</p>
         </div>
 
-        <!-- SECTION 1: ALARMS & NOTIFICATIONS -->
-        <div class="setting-group">
+        <!-- Responsive Two-Column Settings Layout for Tablets & Desktops -->
+        <div class="settings-responsive-grid">
+          <div class="settings-col">
+            <!-- SECTION 1: ALARMS & NOTIFICATIONS -->
+            <div class="setting-group">
           <div class="setting-group-title">
             <span>⏰</span> Alarms & Notifications
           </div>
@@ -567,7 +585,9 @@
             </button>
           </div>
         </div>
+      </div>
 
+      <div class="settings-col">
         <!-- SECTION 3: TEXT-TO-SPEECH (AUDIO READING) -->
         <div class="setting-group">
           <div class="setting-group-title">
@@ -723,10 +743,12 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
 
         <!-- SECTION 5: APP INFO -->
         <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 30px;">
-          <p><strong>Daily Devotions</strong> • <span style="color: var(--accent-gold); font-weight: 600;">v1.0 (Stable Release)</span></p>
+          <p><strong>Daily Devotions</strong> • <span style="color: var(--accent-gold); font-weight: 600;">v1.1 (Responsive Release)</span></p>
           <p>Daily Reading Plan with Scripture & Audio</p>
           <p style="margin-top: 4px;">Scriptures powered by HelloAO Bible API</p>
           <p style="margin-top: 2px;">Offline PWA • Built for Mobile</p>
@@ -735,28 +757,45 @@
 
     </main>
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Navigation Bar (Bottom on Mobile, Sidebar Rail on Tablet/Desktop) -->
     <nav class="bottom-nav">
-      <button class="nav-item active" data-nav="home">
-        <span class="nav-icon">🏠</span>
-        <span>Today</span>
-      </button>
-      <button class="nav-item" data-nav="devotion">
-        <span class="nav-icon">📖</span>
-        <span>Devotion</span>
-      </button>
-      <button class="nav-item" data-nav="calendar">
-        <span class="nav-icon">📅</span>
-        <span>Calendar</span>
-      </button>
-      <button class="nav-item" data-nav="journal">
-        <span class="nav-icon">✍️</span>
-        <span>Journal</span>
-      </button>
-      <button class="nav-item" data-nav="settings">
-        <span class="nav-icon">⚙️</span>
-        <span>Settings</span>
-      </button>
+      <!-- Branded Header for Sidebar on Tablet / Desktop -->
+      <div class="sidebar-brand-header">
+        <img src="./icons/favicon.png" alt="Daily Devotions" class="sidebar-logo">
+        <div class="sidebar-brand-text">
+          <div class="sidebar-brand-title">Daily Devotions</div>
+          <div class="sidebar-brand-tagline">LifeChurch Bible Study</div>
+        </div>
+      </div>
+
+      <div class="nav-items-container">
+        <button class="nav-item active" data-nav="home">
+          <span class="nav-icon">🏠</span>
+          <span>Today</span>
+        </button>
+        <button class="nav-item" data-nav="devotion">
+          <span class="nav-icon">📖</span>
+          <span>Devotion</span>
+        </button>
+        <button class="nav-item" data-nav="calendar">
+          <span class="nav-icon">📅</span>
+          <span>Calendar</span>
+        </button>
+        <button class="nav-item" data-nav="journal">
+          <span class="nav-icon">✍️</span>
+          <span>Journal</span>
+        </button>
+        <button class="nav-item" data-nav="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- Footer Info in Sidebar on Desktop -->
+      <div class="sidebar-footer-info">
+        <span class="sidebar-ver-tag">BSB • Tagalog ASD</span>
+        <span class="sidebar-badge-offline">Offline Ready</span>
+      </div>
     </nav>
 
     <!-- ==========================================

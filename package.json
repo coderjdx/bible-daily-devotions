@@ -1,6 +1,6 @@
 {
   "name": "daily-devotions",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Daily Devotions - Installable PWA with Scripture, Journal, Alarms, TTS Read Aloud and Offline Support",
   "main": "index.html",
   "scripts": {
