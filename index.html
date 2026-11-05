@@ -276,6 +276,9 @@
           <div class="devotion-study-col">
             <!-- Journal Notes & Reflection Section (Requirement 11) -->
             <div class="devotion-notes-section" id="devotion-notes-section">
+              <!-- Sheet Handle for Mobile Portrait Floating Sheet -->
+              <div class="journal-sheet-handle" id="journal-sheet-handle"></div>
+
               <div class="notes-header">
                 <div class="notes-title">
                   <span>✍️</span> <span id="devotion-notes-header-text">My Notes & Reflection</span>
@@ -286,6 +289,8 @@
                   <div class="notes-autosave-badge" id="notes-save-badge">
                     <span>✓</span> Auto-saved
                   </div>
+                  <!-- Close Button for Mobile Portrait Floating Sheet -->
+                  <button class="sheet-close-btn journal-sheet-close-btn" id="btn-close-journal-sheet" title="Close Notes">✕</button>
                 </div>
               </div>
 
@@ -385,6 +390,13 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Done Button for Mobile Portrait Sheet -->
+              <div class="journal-sheet-bottom-action">
+                <button class="btn-primary" id="btn-done-journal-sheet" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span>✓</span> Done (Notes Auto-Saved)
+                </button>
+              </div>
             </div>
 
             <!-- Bottom Mark as Complete Button (Requirement 3) -->
@@ -401,6 +413,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Backdrop overlay for mobile portrait floating journal sheet -->
+        <div class="modal-backdrop journal-sheet-backdrop" id="devotion-journal-backdrop" style="display: none;"></div>
+
+        <!-- Floating Notepad Trigger Button on Devotion View (Portrait Mobile) -->
+        <button class="floating-notepad-btn" id="btn-floating-notepad" title="Open Journal & Notes">
+          <span class="notepad-btn-icon">✍️</span>
+          <span class="notepad-btn-label">Journal</span>
+          <span class="notepad-badge-dot" id="notepad-has-notes-badge" style="display: none;" title="Notes saved for today">●</span>
+        </button>
 
         <!-- Floating Audio Player Bar -->
         <div class="floating-tts-player" id="floating-tts-player" style="display: none;">

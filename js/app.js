@@ -182,6 +182,14 @@
     el.devotionImagePreviewContainer = document.getElementById('devotion-image-preview-container');
     el.btnRemoveImage = document.getElementById('btn-remove-image');
 
+    // Floating Journal Notepad Sheet Elements (Mobile Portrait)
+    el.devotionNotesSection = document.getElementById('devotion-notes-section');
+    el.btnFloatingNotepad = document.getElementById('btn-floating-notepad');
+    el.devotionJournalBackdrop = document.getElementById('devotion-journal-backdrop');
+    el.btnCloseJournalSheet = document.getElementById('btn-close-journal-sheet');
+    el.btnDoneJournalSheet = document.getElementById('btn-done-journal-sheet');
+    el.notepadHasNotesBadge = document.getElementById('notepad-has-notes-badge');
+
     // Completion & Study Column
     el.viewDevotion = document.getElementById('view-devotion');
     el.devotionStudyCol = document.querySelector('.devotion-study-col');
@@ -379,6 +387,7 @@
 
   // --- Navigation & Views ---
   function switchView(viewName) {
+    closeJournalSheet();
     state.activeView = viewName;
     el.views.forEach(v => {
       if (v.id === `view-${viewName}`) {
@@ -404,7 +413,14 @@
 
     // View specific renders
     if (viewName === 'home') renderHome();
-    if (viewName === 'devotion') renderDevotion(state.currentDay);
+    if (viewName === 'devotion') {
+      if (el.viewDevotion && window.ttsService && window.ttsService.state && window.ttsService.state.track) {
+        el.viewDevotion.classList.add('tts-player-active');
+      } else if (el.viewDevotion) {
+        el.viewDevotion.classList.remove('tts-player-active');
+      }
+      renderDevotion(state.currentDay);
+    }
     if (viewName === 'calendar') renderCalendar();
     if (viewName === 'journal') renderJournal();
     if (viewName === 'settings') renderSettings();
@@ -559,6 +575,143 @@
     }
   }
 
+  // --- Journal Autosave & Floating Sheet Helpers ---
+  let noteSaveTimeout = null;
+
+  async function executeNotesSave(isSoap) {
+    if (state.isCurrentDayLocked) return;
+    const dateStr = getDayDateStr(state.currentDay);
+
+    if (isSoap) {
+      const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
+      const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
+      const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
+      const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
+
+      if (!hasUserReflections) {
+        if (window.devotionStore.deleteNote) {
+          await window.devotionStore.deleteNote(dateStr);
+        }
+        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+        await updateNotepadBadge();
+        return;
+      }
+
+      const sched = window.bibleService.getDaySchedule(state.currentDay);
+      const defaultScripture = sched ? sched.scriptures : '';
+      const scriptureVal = (el.soapScriptureInput && el.soapScriptureInput.value.trim()) ? el.soapScriptureInput.value : defaultScripture;
+      const soapObj = {
+        format: 'soap',
+        scripture: scriptureVal,
+        observation: el.soapObservationInput ? el.soapObservationInput.value : '',
+        application: el.soapApplicationInput ? el.soapApplicationInput.value : '',
+        prayer: el.soapPrayerInput ? el.soapPrayerInput.value : ''
+      };
+      await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj));
+    } else {
+      const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
+      if (!stdText) {
+        if (window.devotionStore.deleteNote) {
+          await window.devotionStore.deleteNote(dateStr);
+        }
+        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+        await updateNotepadBadge();
+        return;
+      }
+      await window.devotionStore.saveNote(dateStr, el.devotionNotesInput.value);
+    }
+    if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
+    await updateNotepadBadge();
+  }
+
+  function triggerNotesSave(isSoap) {
+    if (state.isCurrentDayLocked) return;
+    clearTimeout(noteSaveTimeout);
+
+    if (isSoap) {
+      const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
+      const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
+      const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
+      const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
+
+      if (!hasUserReflections) {
+        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+        noteSaveTimeout = setTimeout(() => executeNotesSave(true), 300);
+        return;
+      }
+    } else {
+      const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
+      if (!stdText) {
+        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
+        noteSaveTimeout = setTimeout(() => executeNotesSave(false), 300);
+        return;
+      }
+    }
+
+    if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '⏳ Saving...';
+    noteSaveTimeout = setTimeout(() => executeNotesSave(isSoap), 500);
+  }
+
+  function flushNotesSave() {
+    if (noteSaveTimeout) {
+      clearTimeout(noteSaveTimeout);
+      noteSaveTimeout = null;
+      executeNotesSave(state.soapFormatEnabled);
+    }
+  }
+
+  async function updateNotepadBadge() {
+    if (!el.notepadHasNotesBadge) return;
+    try {
+      const dateStr = getDayDateStr(state.currentDay);
+      const note = await window.devotionStore.getNote(dateStr);
+      let hasContent = false;
+      if (note) {
+        if (typeof note === 'string') {
+          try {
+            const parsed = JSON.parse(note);
+            if (parsed && typeof parsed === 'object') {
+              const obs = (parsed.observation || '').trim();
+              const app = (parsed.application || '').trim();
+              const pray = (parsed.prayer || '').trim();
+              hasContent = Boolean(obs || app || pray);
+            } else {
+              hasContent = Boolean(note.trim());
+            }
+          } catch (e) {
+            hasContent = Boolean(note.trim());
+          }
+        }
+      }
+      el.notepadHasNotesBadge.style.display = hasContent ? 'inline-block' : 'none';
+    } catch (err) {
+      console.warn('Error updating notepad badge:', err);
+    }
+  }
+
+  function openJournalSheet() {
+    if (!el.devotionNotesSection) return;
+    el.devotionNotesSection.classList.add('sheet-open');
+    if (el.devotionJournalBackdrop) el.devotionJournalBackdrop.style.display = 'block';
+
+    if (!state.isCurrentDayLocked) {
+      setTimeout(() => {
+        if (state.soapFormatEnabled && el.soapObservationInput) {
+          el.soapObservationInput.focus();
+        } else if (el.devotionNotesInput) {
+          el.devotionNotesInput.focus();
+        }
+      }, 300);
+    }
+  }
+
+  function closeJournalSheet() {
+    flushNotesSave();
+    if (el.devotionNotesSection) el.devotionNotesSection.classList.remove('sheet-open');
+    if (el.devotionJournalBackdrop) el.devotionJournalBackdrop.style.display = 'none';
+    updateNotepadBadge();
+  }
+
   // --- Event Bindings ---
   function bindEvents() {
     // Navigation bar
@@ -622,85 +775,7 @@
     el.btnFontLarger.addEventListener('click', () => adjustFontSize(1));
     el.btnFontFamily.addEventListener('click', toggleFontFamily);
 
-    // Notes auto-save with debounce
-    let noteSaveTimeout = null;
-    function triggerNotesSave(isSoap) {
-      if (state.isCurrentDayLocked) return;
-      clearTimeout(noteSaveTimeout);
-      const dateStr = getDayDateStr(state.currentDay);
-
-      if (isSoap) {
-        const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
-        const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
-        const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
-        const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
-
-        // User Requirement: "When SOAP is enabled, do not autosave journal entries if the SCRIPTURE section is the only one filled out as that box is auto-filled."
-        if (!hasUserReflections) {
-          if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
-          // Remove any stale or empty note for this date
-          noteSaveTimeout = setTimeout(async () => {
-            if (window.devotionStore.deleteNote) {
-              await window.devotionStore.deleteNote(dateStr);
-            }
-          }, 300);
-          return;
-        }
-      } else {
-        const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
-        if (!stdText) {
-          if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
-          noteSaveTimeout = setTimeout(async () => {
-            if (window.devotionStore.deleteNote) {
-              await window.devotionStore.deleteNote(dateStr);
-            }
-          }, 300);
-          return;
-        }
-      }
-
-      if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '⏳ Saving...';
-      noteSaveTimeout = setTimeout(async () => {
-        if (isSoap) {
-          const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
-          const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
-          const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
-          const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
-
-          if (!hasUserReflections) {
-            if (window.devotionStore.deleteNote) {
-              await window.devotionStore.deleteNote(dateStr);
-            }
-            if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
-            return;
-          }
-
-          const sched = window.bibleService.getDaySchedule(state.currentDay);
-          const defaultScripture = sched ? sched.scriptures : '';
-          const scriptureVal = (el.soapScriptureInput && el.soapScriptureInput.value.trim()) ? el.soapScriptureInput.value : defaultScripture;
-          const soapObj = {
-            format: 'soap',
-            scripture: scriptureVal,
-            observation: el.soapObservationInput ? el.soapObservationInput.value : '',
-            application: el.soapApplicationInput ? el.soapApplicationInput.value : '',
-            prayer: el.soapPrayerInput ? el.soapPrayerInput.value : ''
-          };
-          await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj));
-        } else {
-          const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
-          if (!stdText) {
-            if (window.devotionStore.deleteNote) {
-              await window.devotionStore.deleteNote(dateStr);
-            }
-            if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
-            return;
-          }
-          await window.devotionStore.saveNote(dateStr, el.devotionNotesInput.value);
-        }
-        if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
-      }, 500);
-    }
-
+    // Notes auto-save event listeners
     if (el.devotionNotesInput) {
       el.devotionNotesInput.addEventListener('input', () => triggerNotesSave(false));
     }
@@ -708,6 +783,25 @@
     [el.soapScriptureInput, el.soapObservationInput, el.soapApplicationInput, el.soapPrayerInput].forEach(inp => {
       if (inp) {
         inp.addEventListener('input', () => triggerNotesSave(true));
+      }
+    });
+
+    // Floating Journal Sheet triggers (Mobile Portrait)
+    if (el.btnFloatingNotepad) {
+      el.btnFloatingNotepad.addEventListener('click', openJournalSheet);
+    }
+    if (el.btnCloseJournalSheet) {
+      el.btnCloseJournalSheet.addEventListener('click', closeJournalSheet);
+    }
+    if (el.btnDoneJournalSheet) {
+      el.btnDoneJournalSheet.addEventListener('click', closeJournalSheet);
+    }
+    if (el.devotionJournalBackdrop) {
+      el.devotionJournalBackdrop.addEventListener('click', closeJournalSheet);
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.devotionNotesSection && el.devotionNotesSection.classList.contains('sheet-open')) {
+        closeJournalSheet();
       }
     });
 
@@ -1293,6 +1387,7 @@
 
       if (!info.track) {
         el.floatingTtsPlayer.style.display = 'none';
+        if (el.viewDevotion) el.viewDevotion.classList.remove('tts-player-active');
         if (el.btnReadAllIcon) el.btnReadAllIcon.textContent = '▶️';
         if (el.btnReadAllText) el.btnReadAllText.textContent = 'Read All';
         document.querySelectorAll('.passage-listen-btn').forEach(btn => {
@@ -1303,6 +1398,7 @@
       }
 
       el.floatingTtsPlayer.style.display = 'flex';
+      if (el.viewDevotion) el.viewDevotion.classList.add('tts-player-active');
       el.ttsPlayerTitle.textContent = info.track.label || 'Daily Devotion Reading';
 
       if (info.track.loading) {
@@ -1719,6 +1815,9 @@
       el.btnMarkComplete.title = 'Mark this devotion as completed';
       el.completedBadgeCard.style.display = 'none';
     }
+
+    // Refresh floating notepad badge indicator for today's devotion
+    await updateNotepadBadge();
   }
 
   function renderPassageTabs(daySched) {
