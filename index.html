@@ -260,15 +260,23 @@
           <!-- Sticky Devotional Companion Column (Notes, Photo & Completion) -->
           <div class="devotion-study-col">
             <!-- Journal Notes & Reflection Section (Requirement 11) -->
-            <div class="devotion-notes-section">
+            <div class="devotion-notes-section" id="devotion-notes-section">
               <div class="notes-header">
                 <div class="notes-title">
                   <span>✍️</span> <span id="devotion-notes-header-text">My Notes & Reflection</span>
                   <button class="tool-btn" id="btn-toggle-soap-devotion" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 8px;" title="Toggle S.O.A.P. Journal Format">SOAP: Off</button>
                 </div>
-                <div class="notes-autosave-badge" id="notes-save-badge">
-                  <span>✓</span> Auto-saved
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="journal-lock-badge" id="journal-lock-badge" style="display: none;" title="Journal reflections are locked because this day is marked as complete">🔒 Locked</span>
+                  <div class="notes-autosave-badge" id="notes-save-badge">
+                    <span>✓</span> Auto-saved
+                  </div>
                 </div>
+              </div>
+
+              <!-- Locked Notice Banner (shown when devotion completed) -->
+              <div class="journal-locked-notice" id="journal-locked-notice" style="display: none;">
+                <span>🔒</span> <span><strong>Journal Locked:</strong> This day is marked as complete. To edit your reflections or change photos, tap <em>Mark as Incomplete</em> below.</span>
               </div>
 
               <!-- Standard Freeform Notes Container -->

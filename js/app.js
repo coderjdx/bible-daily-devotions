@@ -18,7 +18,8 @@
     theme: 'dark',
     journalTab: 'entries',       // 'entries', 'gallery'
     selectedJournalMonth: '2026-11',
-    soapFormatEnabled: false
+    soapFormatEnabled: false,
+    isCurrentDayLocked: false
   };
 
   // DOM Elements cache
@@ -163,8 +164,11 @@
     el.btnTtsDownload = document.getElementById('btn-tts-download');
 
     // Notes & Image
+    el.devotionNotesSection = document.getElementById('devotion-notes-section');
     el.devotionNotesInput = document.getElementById('devotion-notes-input');
     el.notesSaveBadge = document.getElementById('notes-save-badge');
+    el.journalLockBadge = document.getElementById('journal-lock-badge');
+    el.journalLockedNotice = document.getElementById('journal-locked-notice');
     el.devotionNotesHeaderText = document.getElementById('devotion-notes-header-text');
     el.btnToggleSoapDevotion = document.getElementById('btn-toggle-soap-devotion');
     el.notesStandardWrap = document.getElementById('notes-standard-wrap');
@@ -601,6 +605,7 @@
     // Notes auto-save with debounce
     let noteSaveTimeout = null;
     function triggerNotesSave(isSoap) {
+      if (state.isCurrentDayLocked) return;
       clearTimeout(noteSaveTimeout);
       const dateStr = getDayDateStr(state.currentDay);
 
@@ -688,6 +693,10 @@
 
     if (el.btnToggleSoapDevotion) {
       el.btnToggleSoapDevotion.addEventListener('click', () => {
+        if (state.isCurrentDayLocked) {
+          showToast('Devotion is completed. Unmark completion to change journal format 🔒');
+          return;
+        }
         setSoapFormatEnabled(!state.soapFormatEnabled);
         showToast(state.soapFormatEnabled ? 'SOAP Journal format enabled' : 'Standard notes format enabled');
         triggerNotesSave(state.soapFormatEnabled);
@@ -1454,6 +1463,52 @@
     if (el.calMissedNum) el.calMissedNum.textContent = missedThisMonth;
   }
 
+  // --- Journal Lock State ---
+  function setJournalLockState(isLocked) {
+    state.isCurrentDayLocked = isLocked;
+
+    if (el.devotionNotesSection) {
+      el.devotionNotesSection.classList.toggle('journal-locked', isLocked);
+    }
+
+    if (el.journalLockBadge) {
+      el.journalLockBadge.style.display = isLocked ? 'inline-flex' : 'none';
+    }
+
+    if (el.journalLockedNotice) {
+      el.journalLockedNotice.style.display = isLocked ? 'flex' : 'none';
+    }
+
+    const inputs = [
+      el.devotionNotesInput,
+      el.soapScriptureInput,
+      el.soapObservationInput,
+      el.soapApplicationInput,
+      el.soapPrayerInput
+    ];
+    inputs.forEach(inp => {
+      if (inp) {
+        inp.readOnly = isLocked;
+        inp.disabled = isLocked;
+      }
+    });
+
+    if (el.devotionImageFile) {
+      el.devotionImageFile.disabled = isLocked;
+    }
+    const uploadTrigger = document.querySelector('.image-upload-trigger');
+    if (uploadTrigger) {
+      uploadTrigger.style.display = isLocked ? 'none' : 'inline-flex';
+    }
+    if (el.btnRemoveImage) {
+      el.btnRemoveImage.style.display = isLocked ? 'none' : 'flex';
+    }
+
+    if (el.btnToggleSoapDevotion) {
+      el.btnToggleSoapDevotion.disabled = isLocked;
+    }
+  }
+
   // --- View 2: Devotion Reader ---
   async function renderDevotion(dayNum) {
     const daySched = window.bibleService.getDaySchedule(dayNum);
@@ -1587,9 +1642,12 @@
       el.devotionImagePreviewContainer.style.display = 'none';
     }
 
-    // Render Completion State
+    // Render Completion State & Lock Journal Section if Completed
     const completion = await window.devotionStore.getCompletion(dateStr);
-    if (completion && completion.completed) {
+    const isCompleted = Boolean(completion && completion.completed);
+    setJournalLockState(isCompleted);
+
+    if (isCompleted) {
       el.btnMarkComplete.style.display = 'none';
       el.completedBadgeCard.style.display = 'block';
       const timeStr = completion.completedAt ? new Date(completion.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -1801,6 +1859,10 @@
 
   // --- Image Upload Handler ---
   function handleImageUpload(e) {
+    if (state.isCurrentDayLocked) {
+      showToast('Journal is locked because this day is completed 🔒');
+      return;
+    }
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
@@ -1821,6 +1883,10 @@
   }
 
   async function handleImageRemove() {
+    if (state.isCurrentDayLocked) {
+      showToast('Journal is locked because this day is completed 🔒');
+      return;
+    }
     const dateStr = getDayDateStr(state.currentDay);
     await window.devotionStore.removeImage(dateStr);
     el.devotionImagePreview.src = '';
@@ -1864,39 +1930,58 @@
     }
 
     const dateStr = getDayDateStr(state.currentDay);
-    const scheduledDateStr = dateStr;
-    const todayDateStr = state.todayDateStr;
-
-    // Is this a recovered completion?
-    // "Recovered: number of days completed after the actual date"
+    const dateObj = new Date(2026, 10, state.currentDay);
+    const dateText = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const isRecovered = (state.currentDay < state.simulatedTodayDay);
 
-    const completionData = {
-      completed: true,
-      completedAt: new Date().toISOString(),
-      scheduledDate: scheduledDateStr,
-      isRecovered: isRecovered
-    };
+    showConfirmModal(
+      `Mark Day ${state.currentDay} as Complete?`,
+      `Are you sure you want to mark your devotion for ${dateText} (Day ${state.currentDay}) as complete? Once completed, the journal section for this day will be locked.`,
+      '🎉',
+      async () => {
+        const scheduledDateStr = dateStr;
+        const completionData = {
+          completed: true,
+          completedAt: new Date().toISOString(),
+          scheduledDate: scheduledDateStr,
+          isRecovered: isRecovered
+        };
 
-    await window.devotionStore.setCompletion(dateStr, completionData);
+        await window.devotionStore.setCompletion(dateStr, completionData);
 
-    // Audio chime & Confetti celebration
-    window.alarmService.playTone('harp', 2.0);
-    triggerCelebrationConfetti();
+        // Audio chime & Confetti celebration
+        window.alarmService.playTone('harp', 2.0);
+        triggerCelebrationConfetti();
 
-    showToast(isRecovered ? 'Day Recovered! Great job catching up! ✨' : 'Day Completed! Great devotion! 🎉');
+        showToast(isRecovered ? 'Day Recovered! Great job catching up! ✨' : 'Day Completed! Great devotion! 🎉');
 
-    // Re-render
-    renderDevotion(state.currentDay);
-    updateStatsDashboard();
+        // Re-render devotion (locks journal section) & stats
+        renderDevotion(state.currentDay);
+        updateStatsDashboard();
+      },
+      '✓ Mark Day as Complete',
+      false
+    );
   }
 
   async function handleUnmarkComplete() {
     const dateStr = getDayDateStr(state.currentDay);
-    await window.devotionStore.removeCompletion(dateStr);
-    showToast('Devotion unmarked');
-    renderDevotion(state.currentDay);
-    updateStatsDashboard();
+    const dateObj = new Date(2026, 10, state.currentDay);
+    const dateText = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    showConfirmModal(
+      `Mark Day ${state.currentDay} as Incomplete?`,
+      `Are you sure you want to unmark your devotion for ${dateText} (Day ${state.currentDay})? This will unlock your journal reflections for editing.`,
+      '↩️',
+      async () => {
+        await window.devotionStore.removeCompletion(dateStr);
+        showToast('Devotion marked as incomplete. Journal unlocked 🔓');
+        renderDevotion(state.currentDay);
+        updateStatsDashboard();
+      },
+      'Yes, Mark as Incomplete',
+      true
+    );
   }
 
   // --- View 3: Calendar View (Requirement 9) ---
@@ -2312,11 +2397,21 @@
 
   // --- Confirmation Modal Helpers ---
   let confirmCallback = null;
-  function showConfirmModal(title, desc, icon, onProceed) {
+  function showConfirmModal(title, desc, icon, onProceed, proceedLabel = 'Yes, Proceed', isDanger = true) {
     if (!el.modalConfirm) return;
     el.confirmModalTitle.textContent = title;
     el.confirmModalDesc.textContent = desc;
     el.confirmModalIcon.textContent = icon || '⚠️';
+    if (el.btnConfirmProceed) {
+      el.btnConfirmProceed.textContent = proceedLabel;
+      if (isDanger) {
+        el.btnConfirmProceed.className = 'btn-danger-action';
+        el.btnConfirmProceed.style.cssText = 'padding: 13px; font-size: 0.9rem; justify-content: center; font-weight: 700; width: 100%;';
+      } else {
+        el.btnConfirmProceed.className = 'btn-primary';
+        el.btnConfirmProceed.style.cssText = 'padding: 13px; font-size: 0.9rem; justify-content: center; font-weight: 700; width: 100%;';
+      }
+    }
     confirmCallback = onProceed;
     el.modalConfirm.classList.add('active');
   }
