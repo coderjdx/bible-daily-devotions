@@ -1543,6 +1543,22 @@
     await updateStatsDashboard();
   }
 
+  // --- Completion & Streak Helpers ---
+  function isCompletionOnTime(c) {
+    if (!c || !c.completed) return false;
+    // Explicitly marked as recovered (completed after scheduled date)
+    if (c.isRecovered === true) return false;
+    if (c.isRecovered === false) return true;
+    // Fallback for legacy completion records lacking explicit isRecovered flag
+    if (c.scheduledDate && c.completedAt) {
+      const completedDayStr = c.completedAt.slice(0, 10);
+      if (completedDayStr > c.scheduledDate) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // --- Stats Dashboard (Requirement 12) ---
   async function updateStatsDashboard() {
     const allCompletions = await window.devotionStore.getAllCompletions();
@@ -1562,7 +1578,7 @@
 
       if (c) {
         completedThisMonth++;
-        if (c.isRecovered) {
+        if (!isCompletionOnTime(c)) {
           recoveredCount++;
         }
       } else {
@@ -1573,26 +1589,28 @@
       }
     }
 
-    // Streak Calculation: count backwards from today (or yesterday if today not yet completed)
+    // Streak Calculation:
+    // Only count consecutive days when completed on their own dates and not recovered.
+    // The streak breaks as soon as a day is missed or recovered.
     let streak = 0;
-    let checkDay = state.simulatedTodayDay;
+    const todayStr = getDayDateStr(state.simulatedTodayDay);
+    const todayRecord = completionsMap.get(todayStr);
+    const todayCompletedOnTime = isCompletionOnTime(todayRecord);
 
-    // If today is completed, streak includes today
-    const todayCompleted = completionsMap.has(getDayDateStr(checkDay));
-    if (todayCompleted) {
-      streak++;
-      checkDay--;
-    } else {
-      // If today not yet completed, check backwards from yesterday
-      checkDay--;
+    if (todayCompletedOnTime) {
+      streak = 1;
     }
 
+    // Count backwards starting from yesterday
+    let checkDay = state.simulatedTodayDay - 1;
     while (checkDay >= 1) {
       const dStr = getDayDateStr(checkDay);
-      if (completionsMap.has(dStr)) {
+      const rec = completionsMap.get(dStr);
+      if (isCompletionOnTime(rec)) {
         streak++;
         checkDay--;
       } else {
+        // Streak breaks as soon as a day was missed or not completed on its date
         break;
       }
     }
@@ -2195,7 +2213,7 @@
         const cell = cellMap.get(d);
         if (cell) {
           cell.classList.remove('missed');
-          if (c.isRecovered) {
+          if (!isCompletionOnTime(c)) {
             cell.classList.add('recovered');
           } else {
             cell.classList.add('completed');
