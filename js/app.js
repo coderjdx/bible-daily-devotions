@@ -4614,8 +4614,12 @@
       // 4. Scripture Verse
       const textMargin = 110;
       const maxTextWidth = width - textMargin * 2;
-      const rawText = (verseText || '').trim();
+      const rawText = (verseText || '').replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim();
       const charCount = rawText.length;
+
+      // Ensure text is centered horizontally and baseline is vertically centered
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
       // Dynamic font size scaling: larger when fewer characters
       let fontSize = 42;
@@ -4671,6 +4675,8 @@
         startY = topReserved;
       }
 
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
       ctx.shadowBlur = 12;
@@ -4684,6 +4690,8 @@
       // 5. Scripture Reference Badge
       const refY = startY + totalTextHeight + (fontSize > 50 ? 46 : 38);
       const refFontSize = (fontSize > 55) ? 34 : ((fontSize > 40) ? 30 : 26);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.font = `bold ${refFontSize}px "Plus Jakarta Sans", -apple-system, sans-serif`;
       const goldColor = (theme === 'dawn') ? '#fde68a' : ((theme === 'garden') ? '#6ee7b7' : '#f59e0b');
       ctx.fillStyle = goldColor;
@@ -4699,6 +4707,8 @@
         ctx.lineTo(width / 2 + 120, divY);
         ctx.stroke();
 
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.font = 'italic 24px "Plus Jakarta Sans", sans-serif';
         ctx.fillStyle = '#cbd5e1';
         const refLines = getLines(ctx, `My Reflection: "${reflection.slice(0, 180)}${reflection.length > 180 ? '...' : ''}"`, maxTextWidth - 60);
@@ -4710,6 +4720,8 @@
 
       // 7. Watermark Footer
       if (includeWatermark) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.font = '600 20px "Plus Jakarta Sans", -apple-system, sans-serif';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
         ctx.fillText('Daily Devotions | Bible Companion App', width / 2, height - margin - 35);
@@ -4805,7 +4817,9 @@
   }
 
   function getLines(ctx, text, maxWidth) {
-    const words = text.split(' ');
+    if (!text) return [];
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [];
     const lines = [];
     let currentLine = words[0];
 
