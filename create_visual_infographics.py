@@ -521,7 +521,7 @@ def main():
           <div class="title-wrap">
             <div class="logo-badge">📖</div>
             <div>
-              <h1>Daily Bread: LifeChurch Devotions</h1>
+              <h1>Daily Devotions: Bible Companion App</h1>
               <p class="subtitle">Complete Feature Architecture — Crafted for Peace, Focus, and Daily Spiritual Growth</p>
             </div>
           </div>

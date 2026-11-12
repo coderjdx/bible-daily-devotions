@@ -1,6 +1,6 @@
 /**
  * app.js - Main Application Controller
- * Daily Bread - LifeChurch Devotions PWA
+ * Daily Devotions - Bible Companion PWA
  */
 
 (function () {
@@ -1570,7 +1570,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `lifechurch_devotions_backup_${state.todayDateStr}.json`;
+          a.download = `daily_devotions_backup_${state.todayDateStr}.json`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -4963,7 +4963,7 @@
 
     ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillText('DAILY BREAD: LIFECHURCH DEVOTIONS • 100% PRIVATE OFFLINE', 540, 1260);
+    ctx.fillText('DAILY DEVOTIONS | BIBLE COMPANION APP • 100% PRIVATE OFFLINE', 540, 1260);
 
     const link = document.createElement('a');
     link.download = `spiritual-walk-summary-${monthStr}.png`;
