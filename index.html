@@ -472,6 +472,46 @@
             <button class="tts-ctrl-btn" id="btn-tts-download" title="Download Audio File (MP3)">💾</button>
           </div>
         </div>
+
+        <!-- Floating Verse Action Bar (In-Text Verse Highlighting & Bookmarks) -->
+        <div class="verse-action-bar" id="verse-action-bar" style="display: none;" role="toolbar" aria-label="Verse options">
+          <div class="verse-action-ref-box">
+            <span class="verse-action-ref" id="verse-action-ref-text">Verse</span>
+            <span class="verse-action-sub" id="verse-action-sub-text">Tap color to highlight</span>
+          </div>
+          <div class="verse-action-colors">
+            <button class="verse-color-btn color-gold" data-color="gold" title="Gold Highlight">
+              <span class="color-dot"></span>
+            </button>
+            <button class="verse-color-btn color-green" data-color="green" title="Emerald Highlight">
+              <span class="color-dot"></span>
+            </button>
+            <button class="verse-color-btn color-blue" data-color="blue" title="Sky Highlight">
+              <span class="color-dot"></span>
+            </button>
+            <button class="verse-color-btn color-purple" data-color="purple" title="Purple Highlight">
+              <span class="color-dot"></span>
+            </button>
+          </div>
+          <div class="verse-action-divider"></div>
+          <div class="verse-action-tools">
+            <button class="verse-tool-btn" id="btn-verse-bookmark" title="Bookmark Verse">
+              <span class="tool-icon">🔖</span>
+              <span class="tool-label" id="btn-verse-bookmark-label">Bookmark</span>
+            </button>
+            <button class="verse-tool-btn" id="btn-verse-copy" title="Copy Verse">
+              <span class="tool-icon">📋</span>
+              <span class="tool-label">Copy</span>
+            </button>
+            <button class="verse-tool-btn" id="btn-verse-clear" title="Clear Highlight" style="display: none;">
+              <span class="tool-icon">🗑️</span>
+              <span class="tool-label">Clear</span>
+            </button>
+            <button class="verse-tool-btn verse-tool-close" id="btn-verse-close" title="Close Toolbar">
+              <span>✕</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- ==========================================
@@ -566,6 +606,7 @@
             <button class="view-toggle-btn active" id="btn-journal-cat-all" data-category="all">📚 All</button>
             <button class="view-toggle-btn" id="btn-journal-cat-devotions" data-category="devotions">✍️ Devotions</button>
             <button class="view-toggle-btn" id="btn-journal-cat-sunday" data-category="sunday">⛪ Sunday Service</button>
+            <button class="view-toggle-btn" id="btn-journal-cat-highlights" data-category="highlights">✨ Highlights</button>
             <button class="view-toggle-btn" id="btn-journal-cat-gallery" data-category="gallery">📷 Photos</button>
           </div>
         </div>
@@ -582,6 +623,25 @@
         <div id="journal-entries-tab">
           <div id="journal-entries-list">
             <!-- Dynamically populated journal entry cards -->
+          </div>
+        </div>
+
+        <!-- Journal Highlights Tab (Requirement Phase 2) -->
+        <div id="journal-highlights-tab" style="display: none;">
+          <!-- Filter pills for Highlights (All, Gold, Green, Blue, Purple, Bookmarked) -->
+          <div class="journal-tags-bar-wrap" id="journal-highlights-filter-wrap" style="display: flex; margin-bottom: 16px;">
+            <div class="journal-tags-bar-label">🎨 Filter:</div>
+            <div class="journal-tags-bar" id="highlights-color-bar">
+              <button class="journal-tag-pill active" data-highlight-filter="all">All Highlights <span class="tag-pill-count" id="count-hl-all">0</span></button>
+              <button class="journal-tag-pill" data-highlight-filter="gold">🟡 Gold <span class="tag-pill-count" id="count-hl-gold">0</span></button>
+              <button class="journal-tag-pill" data-highlight-filter="green">🟢 Emerald <span class="tag-pill-count" id="count-hl-green">0</span></button>
+              <button class="journal-tag-pill" data-highlight-filter="blue">🔵 Sky <span class="tag-pill-count" id="count-hl-blue">0</span></button>
+              <button class="journal-tag-pill" data-highlight-filter="purple">🟣 Purple <span class="tag-pill-count" id="count-hl-purple">0</span></button>
+              <button class="journal-tag-pill" data-highlight-filter="bookmarks">🔖 Bookmarks <span class="tag-pill-count" id="count-hl-bookmarks">0</span></button>
+            </div>
+          </div>
+          <div id="journal-highlights-list">
+            <!-- Dynamically populated highlight cards -->
           </div>
         </div>
 

@@ -6,7 +6,7 @@
 class DevotionStore {
   constructor() {
     this.dbName = 'DailyDevotionsDB';
-    this.dbVersion = 3;
+    this.dbVersion = 4;
     this.db = null;
     this.initPromise = this.initDB();
   }
@@ -51,6 +51,11 @@ class DevotionStore {
         // Store for Sunday church services: key is date string YYYY-MM-DD
         if (!db.objectStoreNames.contains('sunday_services')) {
           db.createObjectStore('sunday_services', { keyPath: 'date' });
+        }
+
+        // Store for verse highlights & bookmarks: key is id e.g. `${bookId}_${chapter}_${verse}`
+        if (!db.objectStoreNames.contains('highlights')) {
+          db.createObjectStore('highlights', { keyPath: 'id' });
         }
       };
 
@@ -400,6 +405,101 @@ class DevotionStore {
     });
 
     return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+  }
+
+  // --- Verse Highlights & Bookmarks ---
+  async getHighlight(id) {
+    try {
+      const store = await this.getStore('highlights');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.get(id);
+          req.onsuccess = () => res(req.result || null);
+          req.onerror = () => res(null);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback getHighlight', e);
+    }
+    const val = localStorage.getItem(`highlight_${id}`);
+    return val ? JSON.parse(val) : null;
+  }
+
+  async saveHighlight(data) {
+    if (!data || !data.id) return false;
+    const updatedAt = new Date().toISOString();
+    const record = {
+      id: data.id,
+      reference: data.reference || '',
+      bookId: data.bookId || '',
+      bookName: data.bookName || '',
+      chapter: Number(data.chapter) || 1,
+      verse: Number(data.verse) || 1,
+      color: data.color || 'gold',
+      text: (data.text || '').trim(),
+      translation: data.translation || 'BSB',
+      isBookmarked: Boolean(data.isBookmarked),
+      dayNum: data.dayNum ? Number(data.dayNum) : null,
+      dateStr: data.dateStr || '',
+      updatedAt
+    };
+    try {
+      const store = await this.getStore('highlights', 'readwrite');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.put(record);
+          req.onsuccess = () => res(true);
+          req.onerror = () => res(false);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback saveHighlight', e);
+    }
+    localStorage.setItem(`highlight_${data.id}`, JSON.stringify(record));
+    return true;
+  }
+
+  async deleteHighlight(id) {
+    try {
+      const store = await this.getStore('highlights', 'readwrite');
+      if (store) {
+        await new Promise((res) => {
+          const req = store.delete(id);
+          req.onsuccess = req.onerror = () => res(true);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback deleteHighlight', e);
+    }
+    try {
+      localStorage.removeItem(`highlight_${id}`);
+    } catch (e) {}
+    return true;
+  }
+
+  async getAllHighlights() {
+    try {
+      const store = await this.getStore('highlights');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.getAll();
+          req.onsuccess = () => res(req.result || []);
+          req.onerror = () => res([]);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback getAllHighlights', e);
+    }
+    const list = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('highlight_')) {
+        try {
+          list.push(JSON.parse(localStorage.getItem(key)));
+        } catch (e) {}
+      }
+    }
+    return list;
   }
 
   // --- Images ---
@@ -902,6 +1002,17 @@ class DevotionStore {
     await this.deleteScriptureData(null);
     await this.deleteTTSData(null);
 
+    // Clear highlights from IDB
+    try {
+      const hlStore = await this.getStore('highlights', 'readwrite');
+      if (hlStore) {
+        await new Promise((res) => {
+          const req = hlStore.clear();
+          req.onsuccess = req.onerror = () => res(true);
+        });
+      }
+    } catch (e) {}
+
     // Clear settings from IDB if present
     try {
       const settingsStore = await this.getStore('settings', 'readwrite');
@@ -916,7 +1027,7 @@ class DevotionStore {
     // Clear all localStorage
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('setting_') || k.startsWith('note_') || k.startsWith('img_') || k.startsWith('completion_') || k.startsWith('tts_'))) {
+      if (k && (k.startsWith('setting_') || k.startsWith('note_') || k.startsWith('img_') || k.startsWith('completion_') || k.startsWith('tts_') || k.startsWith('sunday_service_') || k.startsWith('highlight_'))) {
         localStorage.removeItem(k);
       }
     }
@@ -928,6 +1039,7 @@ class DevotionStore {
     const allCompletions = await this.getAllCompletions();
     const allNotes = await this.getAllNotes();
     const allImages = await this.getAllImages();
+    const allHighlights = await this.getAllHighlights();
     const offlineChapters = await this.countOfflineChapters();
     const ttsAudioCount = await this.countTTSAudio(scopeMonth);
 
@@ -944,6 +1056,7 @@ class DevotionStore {
       completionsCount: completions.length,
       notesCount: notes.length,
       imagesCount: images.length,
+      highlightsCount: allHighlights.length,
       offlineChaptersCount: offlineChapters,
       ttsAudioCount: ttsAudioCount
     };
@@ -954,6 +1067,7 @@ class DevotionStore {
     const notes = await this.getAllNotes();
     const images = await this.getAllImages();
     const sundayServices = await this.getAllSundayServices();
+    const highlights = await this.getAllHighlights();
     const settings = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -963,13 +1077,14 @@ class DevotionStore {
     }
 
     return {
-      version: 3,
+      version: 4,
       appName: 'Daily Devotions',
       exportedAt: new Date().toISOString(),
       completions,
       notes,
       images,
       sundayServices,
+      highlights,
       settings
     };
   }
@@ -1006,7 +1121,7 @@ class DevotionStore {
       }
     }
 
-    // 3. Import images
+    // 4. Import images
     if (Array.isArray(imported.images)) {
       for (const img of imported.images) {
         if (img.date && img.dataUrl) {
@@ -1015,7 +1130,16 @@ class DevotionStore {
       }
     }
 
-    // 4. Import settings
+    // 5. Import highlights
+    if (Array.isArray(imported.highlights)) {
+      for (const h of imported.highlights) {
+        if (h.id) {
+          await this.saveHighlight(h);
+        }
+      }
+    }
+
+    // 6. Import settings
     if (imported.settings && typeof imported.settings === 'object') {
       for (const [key, val] of Object.entries(imported.settings)) {
         this.setSetting(key, val);

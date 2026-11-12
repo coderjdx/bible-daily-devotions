@@ -17,8 +17,10 @@
     fontFamily: 'serif',         // 'serif', 'sans'
     theme: 'dark',
     journalTab: 'entries',       // 'entries', 'gallery' (legacy compatibility)
-    journalCategory: 'all',      // 'all', 'devotions', 'sunday', 'gallery'
+    journalCategory: 'all',      // 'all', 'devotions', 'sunday', 'highlights', 'gallery'
     selectedTagFilter: null,     // null or tag string (e.g. 'faith')
+    selectedVerse: null,         // currently active verse in devotion view
+    activeHighlightFilter: 'all', // 'all', 'gold', 'green', 'blue', 'purple', 'bookmarks'
     devotionTags: [],            // array of tags for active devotion
     sundayTags: [],              // array of tags for Sunday modal
     activeSundayDateStr: null,   // active date for Sunday modal
@@ -234,13 +236,27 @@
     el.btnJournalCatAll = document.getElementById('btn-journal-cat-all');
     el.btnJournalCatDevotions = document.getElementById('btn-journal-cat-devotions');
     el.btnJournalCatSunday = document.getElementById('btn-journal-cat-sunday');
+    el.btnJournalCatHighlights = document.getElementById('btn-journal-cat-highlights');
     el.btnJournalCatGallery = document.getElementById('btn-journal-cat-gallery');
     el.journalTagsBarWrap = document.getElementById('journal-tags-bar-wrap');
     el.journalTagsBar = document.getElementById('journal-tags-bar');
     el.journalEntriesTab = document.getElementById('journal-entries-tab');
+    el.journalHighlightsTab = document.getElementById('journal-highlights-tab');
+    el.journalHighlightsList = document.getElementById('journal-highlights-list');
+    el.highlightsColorBar = document.getElementById('highlights-color-bar');
     el.journalGalleryTab = document.getElementById('journal-gallery-tab');
     el.journalEntriesList = document.getElementById('journal-entries-list');
     el.journalGalleryGrid = document.getElementById('journal-gallery-grid');
+
+    // Floating Verse Action Bar (Phase 2 Highlighting)
+    el.verseActionBar = document.getElementById('verse-action-bar');
+    el.verseActionRefText = document.getElementById('verse-action-ref-text');
+    el.verseActionSubText = document.getElementById('verse-action-sub-text');
+    el.btnVerseBookmark = document.getElementById('btn-verse-bookmark');
+    el.btnVerseBookmarkLabel = document.getElementById('btn-verse-bookmark-label');
+    el.btnVerseCopy = document.getElementById('btn-verse-copy');
+    el.btnVerseClear = document.getElementById('btn-verse-clear');
+    el.btnVerseClose = document.getElementById('btn-verse-close');
 
     // Sunday Church Service Modal
     el.modalSundayService = document.getElementById('modal-sunday-service');
@@ -437,6 +453,7 @@
   // --- Navigation & Views ---
   function switchView(viewName) {
     closeJournalSheet();
+    closeVerseActionBar();
     state.activeView = viewName;
     el.views.forEach(v => {
       if (v.id === `view-${viewName}`) {
@@ -1161,6 +1178,7 @@
       { btn: el.btnJournalCatAll, cat: 'all' },
       { btn: el.btnJournalCatDevotions, cat: 'devotions' },
       { btn: el.btnJournalCatSunday, cat: 'sunday' },
+      { btn: el.btnJournalCatHighlights, cat: 'highlights' },
       { btn: el.btnJournalCatGallery, cat: 'gallery' }
     ];
 
@@ -1168,13 +1186,77 @@
       if (!btn) return;
       btn.addEventListener('click', () => {
         state.journalCategory = cat;
-        state.journalTab = (cat === 'gallery') ? 'gallery' : 'entries';
+        state.journalTab = (cat === 'gallery') ? 'gallery' : (cat === 'highlights' ? 'highlights' : 'entries');
         journalCategoryBtns.forEach(c => {
           if (c.btn) c.btn.classList.toggle('active', c.cat === cat);
         });
         state.selectedTagFilter = null;
         renderJournal();
       });
+    });
+
+    // Highlights Color Filter Pills
+    if (el.highlightsColorBar) {
+      el.highlightsColorBar.querySelectorAll('.journal-tag-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          el.highlightsColorBar.querySelectorAll('.journal-tag-pill').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.activeHighlightFilter = btn.dataset.highlightFilter || 'all';
+          renderJournalHighlights(state.selectedJournalMonth || '2026-11');
+        });
+      });
+    }
+
+    // Verse Action Bar Controls (Phase 2)
+    document.querySelectorAll('.verse-color-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const color = btn.dataset.color;
+        if (color) handleVerseColorClick(color);
+      });
+    });
+
+    if (el.btnVerseBookmark) {
+      el.btnVerseBookmark.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleVerseBookmarkClick();
+      });
+    }
+
+    if (el.btnVerseCopy) {
+      el.btnVerseCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleVerseCopyClick();
+      });
+    }
+
+    if (el.btnVerseClear) {
+      el.btnVerseClear.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleVerseClearClick();
+      });
+    }
+
+    if (el.btnVerseClose) {
+      el.btnVerseClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeVerseActionBar();
+      });
+    }
+
+    // Dismiss verse toolbar on outside click or Escape
+    document.addEventListener('click', (e) => {
+      if (el.verseActionBar && el.verseActionBar.style.display !== 'none') {
+        if (!el.verseActionBar.contains(e.target) && !e.target.closest('.verse-item')) {
+          closeVerseActionBar();
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeVerseActionBar();
+      }
     });
 
     if (el.btnToggleEntries) {
@@ -2130,7 +2212,7 @@
       daySched.passages.map(p => window.bibleService.getPassageVerses(activeTransId, p))
     );
 
-    renderPassagesContent(passageResults, dayNum);
+    await renderPassagesContent(passageResults, dayNum);
 
     // Wire Read All TTS button (Requirement 4)
     if (el.btnReadAllTts) {
@@ -2305,8 +2387,14 @@
     });
   }
 
-  function renderPassagesContent(passageResults, dayNum = 3) {
+  async function renderPassagesContent(passageResults, dayNum = 3) {
     el.passagesContainer.innerHTML = '';
+    closeVerseActionBar();
+
+    const dateStr = getDayDateStr(dayNum);
+    const activeTransId = window.bibleService.activeTranslation;
+    const allHighlights = await window.devotionStore.getAllHighlights();
+    const highlightsMap = new Map(allHighlights.map(h => [h.id, h]));
 
     passageResults.forEach((res, idx) => {
       const card = document.createElement('div');
@@ -2390,6 +2478,8 @@
       body.className = `scripture-body ${state.fontFamily}`;
 
       if (res.content && res.content.length > 0) {
+        const bookId = res.passage.bookId || res.passage.book || res.bookName;
+
         res.content.forEach(item => {
           if (item.type === 'heading') {
             const h = document.createElement('div');
@@ -2397,21 +2487,61 @@
             h.textContent = item.text || (Array.isArray(item.content) ? item.content.join(' ') : '');
             body.appendChild(h);
           } else if (item.type === 'verse') {
+            const verseId = `${bookId}_${res.passage.chapter}_${item.number}`;
+            const verseRef = `${res.bookName} ${res.passage.chapter}:${item.number}`;
+            const verseText = item.text || '';
+            const existingHl = highlightsMap.get(verseId);
+
             const vDiv = document.createElement('div');
             vDiv.className = 'verse-item';
+            vDiv.id = `verse-${verseId}`;
+            vDiv.dataset.verseId = verseId;
+            vDiv.dataset.bookId = bookId;
+            vDiv.dataset.bookName = res.bookName;
+            vDiv.dataset.chapter = String(res.passage.chapter);
+            vDiv.dataset.verseNum = String(item.number);
+            vDiv.dataset.verseRef = verseRef;
+            vDiv.dataset.verseText = verseText;
+            vDiv.dataset.dayNum = String(dayNum);
+            vDiv.dataset.dateStr = dateStr;
+
+            if (existingHl && existingHl.color) {
+              vDiv.classList.add('verse-highlighted', `highlight-${existingHl.color}`);
+            }
+
+            const bookmarkHtml = (existingHl && existingHl.isBookmarked)
+              ? `<span class="verse-bookmark-badge" title="Bookmarked">🔖</span>`
+              : '';
 
             // Check if verse has poem lines
             if (item.poem && item.poem.length > 0) {
               const lines = (item.text || '').split('\n');
-              let html = `<span class="verse-num">${item.number}</span>`;
+              let html = `<span class="verse-num">${item.number}</span>${bookmarkHtml}`;
               lines.forEach((line, lineIdx) => {
                 const poemMeta = item.poem[lineIdx] || { level: 1 };
                 html += `<div class="verse-poem-line level-${poemMeta.level || 1}">${line}</div>`;
               });
               vDiv.innerHTML = html;
             } else {
-              vDiv.innerHTML = `<span class="verse-num">${item.number}</span><span class="verse-text">${item.text || ''}</span>`;
+              vDiv.innerHTML = `<span class="verse-num">${item.number}</span><span class="verse-text">${item.text || ''}</span>${bookmarkHtml}`;
             }
+
+            vDiv.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openVerseActionBar(vDiv, {
+                id: verseId,
+                reference: verseRef,
+                bookId,
+                bookName: res.bookName,
+                chapter: Number(res.passage.chapter),
+                verse: Number(item.number),
+                text: verseText,
+                translation: activeTransId,
+                dayNum,
+                dateStr
+              });
+            });
+
             body.appendChild(vDiv);
           }
         });
@@ -2424,6 +2554,237 @@
     });
 
     filterPassageView();
+  }
+
+  // --- Verse Action Bar & In-Text Highlighting Controller ---
+  async function openVerseActionBar(verseEl, verseData) {
+    document.querySelectorAll('.verse-item.verse-selected').forEach(elem => elem.classList.remove('verse-selected'));
+    verseEl.classList.add('verse-selected');
+
+    state.selectedVerse = {
+      ...verseData,
+      el: verseEl,
+      currentHl: null
+    };
+
+    if (el.verseActionRefText) {
+      el.verseActionRefText.textContent = verseData.reference;
+    }
+    if (el.verseActionSubText) {
+      el.verseActionSubText.textContent = 'Tap color to highlight';
+    }
+    document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
+    if (el.btnVerseBookmark) {
+      el.btnVerseBookmark.classList.remove('active');
+      if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
+    }
+    if (el.btnVerseClear) {
+      el.btnVerseClear.style.display = 'none';
+    }
+
+    // Show toolbar immediately for instant zero-latency UI
+    if (el.verseActionBar) {
+      el.verseActionBar.style.display = 'flex';
+    }
+
+    const currentHl = await window.devotionStore.getHighlight(verseData.id);
+    if (state.selectedVerse && state.selectedVerse.id === verseData.id) {
+      state.selectedVerse.currentHl = currentHl;
+      if (currentHl && currentHl.color) {
+        if (el.verseActionSubText) {
+          el.verseActionSubText.textContent = `Highlighted in ${currentHl.color.toUpperCase()}`;
+        }
+      }
+      document.querySelectorAll('.verse-color-btn').forEach(btn => {
+        const color = btn.dataset.color;
+        if (currentHl && currentHl.color === color) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      if (el.btnVerseBookmark) {
+        if (currentHl && currentHl.isBookmarked) {
+          el.btnVerseBookmark.classList.add('active');
+          if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmarked';
+        } else {
+          el.btnVerseBookmark.classList.remove('active');
+          if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
+        }
+      }
+
+      if (el.btnVerseClear) {
+        if (currentHl && (currentHl.color || currentHl.isBookmarked)) {
+          el.btnVerseClear.style.display = 'inline-flex';
+        } else {
+          el.btnVerseClear.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  function closeVerseActionBar() {
+    if (el.verseActionBar) {
+      el.verseActionBar.style.display = 'none';
+    }
+    document.querySelectorAll('.verse-item.verse-selected').forEach(elem => elem.classList.remove('verse-selected'));
+    state.selectedVerse = null;
+  }
+
+  async function handleVerseColorClick(color) {
+    if (!state.selectedVerse) return;
+    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl, currentHl } = state.selectedVerse;
+    const isBookmarked = currentHl ? Boolean(currentHl.isBookmarked) : false;
+
+    // Immediate optimistic DOM update
+    if (vEl) {
+      vEl.classList.remove('highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
+      vEl.classList.add('verse-highlighted', `highlight-${color}`);
+    }
+
+    document.querySelectorAll('.verse-color-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.color === color);
+    });
+    if (el.verseActionSubText) {
+      el.verseActionSubText.textContent = `Highlighted in ${color.toUpperCase()}`;
+    }
+    if (el.btnVerseClear) {
+      el.btnVerseClear.style.display = 'inline-flex';
+    }
+
+    const record = {
+      id,
+      reference,
+      bookId,
+      bookName,
+      chapter,
+      verse,
+      color,
+      text,
+      translation,
+      isBookmarked,
+      dayNum,
+      dateStr
+    };
+    state.selectedVerse.currentHl = record;
+    await window.devotionStore.saveHighlight(record);
+
+    showToast(`Highlighted ${reference} ✨`);
+  }
+
+  async function handleVerseBookmarkClick() {
+    if (!state.selectedVerse) return;
+    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl, currentHl } = state.selectedVerse;
+    const newBookmarked = !(currentHl && currentHl.isBookmarked);
+    const currentColor = (currentHl && currentHl.color) ? currentHl.color : 'gold';
+
+    // Immediate optimistic DOM update
+    if (vEl) {
+      let badge = vEl.querySelector('.verse-bookmark-badge');
+      if (newBookmarked) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'verse-bookmark-badge';
+          badge.title = 'Bookmarked';
+          badge.textContent = '🔖';
+          const numEl = vEl.querySelector('.verse-num');
+          if (numEl) numEl.insertAdjacentElement('afterend', badge);
+          else vEl.prepend(badge);
+        }
+      } else {
+        if (badge) badge.remove();
+      }
+    }
+
+    if (el.btnVerseBookmark) {
+      el.btnVerseBookmark.classList.toggle('active', newBookmarked);
+      if (el.btnVerseBookmarkLabel) {
+        el.btnVerseBookmarkLabel.textContent = newBookmarked ? 'Bookmarked' : 'Bookmark';
+      }
+    }
+    if (el.btnVerseClear) {
+      el.btnVerseClear.style.display = 'inline-flex';
+    }
+
+    const record = {
+      id,
+      reference,
+      bookId,
+      bookName,
+      chapter,
+      verse,
+      color: currentColor,
+      text,
+      translation,
+      isBookmarked: newBookmarked,
+      dayNum,
+      dateStr
+    };
+    state.selectedVerse.currentHl = record;
+    await window.devotionStore.saveHighlight(record);
+
+    showToast(newBookmarked ? `Bookmarked ${reference} 🔖` : `Removed bookmark from ${reference}`);
+  }
+
+  function handleVerseCopyClick() {
+    if (!state.selectedVerse) return;
+    const { reference, text, translation } = state.selectedVerse;
+    const copyText = `"${text}" — ${reference} (${translation || 'BSB'})`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(copyText).then(() => {
+        showToast(`Copied ${reference} to clipboard 📋`);
+      }).catch(() => {
+        copyFallback(copyText);
+      });
+    } else {
+      copyFallback(copyText);
+    }
+  }
+
+  async function handleVerseClearClick() {
+    if (!state.selectedVerse) return;
+    const { id, reference, el: vEl } = state.selectedVerse;
+
+    // Immediate optimistic DOM update
+    if (vEl) {
+      vEl.classList.remove('verse-highlighted', 'highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
+      const badge = vEl.querySelector('.verse-bookmark-badge');
+      if (badge) badge.remove();
+    }
+
+    document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
+    if (el.btnVerseBookmark) {
+      el.btnVerseBookmark.classList.remove('active');
+      if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
+    }
+    if (el.verseActionSubText) {
+      el.verseActionSubText.textContent = 'Tap color to highlight';
+    }
+    if (el.btnVerseClear) {
+      el.btnVerseClear.style.display = 'none';
+    }
+
+    state.selectedVerse.currentHl = null;
+    await window.devotionStore.deleteHighlight(id);
+
+    showToast(`Cleared highlight from ${reference}`);
+  }
+
+  function copyFallback(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Copied to clipboard 📋');
+    } catch (err) {
+      showToast('Please copy text manually');
+    }
+    document.body.removeChild(ta);
   }
 
   // --- Typography controls ---
@@ -2682,6 +3043,7 @@
     if (activeCategory === 'gallery') {
       if (el.journalEntriesTab) el.journalEntriesTab.style.display = 'none';
       if (el.journalGalleryTab) el.journalGalleryTab.style.display = 'block';
+      if (el.journalHighlightsTab) el.journalHighlightsTab.style.display = 'none';
       if (el.journalTagsBarWrap) el.journalTagsBarWrap.style.display = 'none';
       const allImages = await window.devotionStore.getAllImages();
       const allNotes = await window.devotionStore.getAllNotes();
@@ -2691,9 +3053,20 @@
       return;
     }
 
+    // If highlights category selected:
+    if (activeCategory === 'highlights') {
+      if (el.journalEntriesTab) el.journalEntriesTab.style.display = 'none';
+      if (el.journalGalleryTab) el.journalGalleryTab.style.display = 'none';
+      if (el.journalHighlightsTab) el.journalHighlightsTab.style.display = 'block';
+      if (el.journalTagsBarWrap) el.journalTagsBarWrap.style.display = 'none';
+      await renderJournalHighlights(selectedMonth);
+      return;
+    }
+
     // Otherwise entries tab is visible
     if (el.journalEntriesTab) el.journalEntriesTab.style.display = 'block';
     if (el.journalGalleryTab) el.journalGalleryTab.style.display = 'none';
+    if (el.journalHighlightsTab) el.journalHighlightsTab.style.display = 'none';
 
     const allNotes = await window.devotionStore.getAllNotes();
     const allImages = await window.devotionStore.getAllImages();
@@ -3044,6 +3417,176 @@
       });
 
       el.journalGalleryGrid.appendChild(tile);
+    });
+  }
+
+  // --- Highlights Catalog in Journal Tab (Phase 2) ---
+  async function renderJournalHighlights(monthStr = 'all') {
+    if (!el.journalHighlightsList) return;
+    el.journalHighlightsList.innerHTML = '';
+
+    const allHighlights = await window.devotionStore.getAllHighlights();
+
+    // Filter by month if monthStr !== 'all'
+    let filtered = allHighlights;
+    if (monthStr !== 'all') {
+      filtered = filtered.filter(h => h.dateStr && h.dateStr.startsWith(monthStr));
+    }
+
+    // Counts for filter pills
+    const countAll = filtered.length;
+    const countGold = filtered.filter(h => h.color === 'gold').length;
+    const countGreen = filtered.filter(h => h.color === 'green').length;
+    const countBlue = filtered.filter(h => h.color === 'blue').length;
+    const countPurple = filtered.filter(h => h.color === 'purple').length;
+    const countBookmarks = filtered.filter(h => h.isBookmarked).length;
+
+    // Update count labels in filter bar
+    const cAll = document.getElementById('count-hl-all');
+    if (cAll) cAll.textContent = countAll;
+    const cGold = document.getElementById('count-hl-gold');
+    if (cGold) cGold.textContent = countGold;
+    const cGreen = document.getElementById('count-hl-green');
+    if (cGreen) cGreen.textContent = countGreen;
+    const cBlue = document.getElementById('count-hl-blue');
+    if (cBlue) cBlue.textContent = countBlue;
+    const cPurple = document.getElementById('count-hl-purple');
+    if (cPurple) cPurple.textContent = countPurple;
+    const cBookmarks = document.getElementById('count-hl-bookmarks');
+    if (cBookmarks) cBookmarks.textContent = countBookmarks;
+
+    // Apply color filter
+    const activeFilter = state.activeHighlightFilter || 'all';
+    let displayList = filtered;
+    if (activeFilter === 'bookmarks') {
+      displayList = displayList.filter(h => h.isBookmarked);
+    } else if (activeFilter !== 'all') {
+      displayList = displayList.filter(h => h.color === activeFilter);
+    }
+
+    // Sort by date / day descending
+    displayList.sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.dateStr || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.dateStr || 0).getTime();
+      return timeB - timeA;
+    });
+
+    if (displayList.length === 0) {
+      el.journalHighlightsList.innerHTML = `
+        <div class="empty-state-box" style="padding: 40px 20px; text-align: center;">
+          <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No Highlights Yet</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 340px; margin: 0 auto 16px;">
+            Tap any verse while reading your daily devotion to highlight in Gold, Emerald, Sky, or Purple, and save bookmarks.
+          </p>
+          <button class="btn-primary" id="btn-empty-hl-goto-devotion" style="padding: 8px 18px; font-size: 0.82rem; border-radius: var(--radius-full);">
+            📖 Go to Today's Devotion
+          </button>
+        </div>
+      `;
+      const btnGo = el.journalHighlightsList.querySelector('#btn-empty-hl-goto-devotion');
+      if (btnGo) {
+        btnGo.addEventListener('click', () => {
+          switchView('devotion');
+        });
+      }
+      return;
+    }
+
+    displayList.forEach(hl => {
+      const card = document.createElement('div');
+      card.className = `journal-highlight-card border-color-${hl.color || 'gold'}`;
+      card.dataset.id = hl.id;
+
+      let dateLabel = '';
+      if (hl.dateStr) {
+        const parts = hl.dateStr.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+      } else if (hl.dayNum) {
+        dateLabel = `Day ${hl.dayNum}`;
+      }
+
+      card.innerHTML = `
+        <div class="highlight-card-header">
+          <div class="highlight-ref-group">
+            <span class="highlight-color-indicator ${hl.color || 'gold'}"></span>
+            <span class="highlight-reference">${hl.reference}</span>
+            <span class="highlight-trans-tag">${hl.translation || 'BSB'}</span>
+            ${hl.isBookmarked ? '<span class="highlight-bookmark-icon" title="Bookmarked">🔖</span>' : ''}
+          </div>
+          ${dateLabel ? `<div class="highlight-date-badge">${dateLabel}</div>` : ''}
+        </div>
+        <blockquote class="highlight-scripture-quote">
+          "${escapeHtml(hl.text)}"
+        </blockquote>
+        <div class="highlight-card-actions">
+          <button class="btn-highlight-action btn-read-context" data-id="${hl.id}" data-day="${hl.dayNum || ''}" data-ref="${hl.reference}">
+            <span>📖</span> Read in Context
+          </button>
+          <button class="btn-highlight-action btn-copy-highlight" data-id="${hl.id}">
+            <span>📋</span> Copy
+          </button>
+          <button class="btn-highlight-action btn-remove-highlight" data-id="${hl.id}">
+            <span>🗑️</span> Remove
+          </button>
+        </div>
+      `;
+
+      // Read in context button
+      const btnRead = card.querySelector('.btn-read-context');
+      btnRead.addEventListener('click', async () => {
+        let targetDay = hl.dayNum;
+        if (!targetDay && hl.dateStr) {
+          const parts = hl.dateStr.split('-');
+          if (parts.length === 3) targetDay = parseInt(parts[2], 10);
+        }
+        if (!targetDay) targetDay = state.currentDay || 3;
+
+        switchView('devotion');
+        await loadDevotionDay(targetDay);
+
+        // Scroll to verse after DOM updates
+        setTimeout(() => {
+          const targetEl = document.getElementById(`verse-${hl.id}`) || document.querySelector(`[data-verse-id="${hl.id}"]`);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetEl.classList.add('verse-pulse-flash');
+            setTimeout(() => targetEl.classList.remove('verse-pulse-flash'), 3000);
+          }
+        }, 150);
+
+        showToast(`Viewing ${hl.reference} in context 📖`);
+      });
+
+      // Copy button
+      const btnCopy = card.querySelector('.btn-copy-highlight');
+      btnCopy.addEventListener('click', () => {
+        const textToCopy = `"${hl.text}" — ${hl.reference} (${hl.translation || 'BSB'})`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast(`Copied ${hl.reference} 📋`);
+          }).catch(() => {
+            copyFallback(textToCopy);
+          });
+        } else {
+          copyFallback(textToCopy);
+        }
+      });
+
+      // Remove button
+      const btnRemove = card.querySelector('.btn-remove-highlight');
+      btnRemove.addEventListener('click', async () => {
+        if (confirm(`Remove highlight for ${hl.reference}?`)) {
+          await window.devotionStore.deleteHighlight(hl.id);
+          showToast(`Highlight removed`);
+          await renderJournalHighlights(monthStr);
+        }
+      });
+
+      el.journalHighlightsList.appendChild(card);
     });
   }
 
@@ -3661,6 +4204,11 @@
   window.closeSundayModal = closeSundayModal;
   window.renderDevotion = renderDevotion;
   window.renderJournal = renderJournal;
+  window.renderJournalHighlights = renderJournalHighlights;
+  window.openVerseActionBar = openVerseActionBar;
+  window.closeVerseActionBar = closeVerseActionBar;
+  window.handleVerseColorClick = handleVerseColorClick;
+  window.handleVerseBookmarkClick = handleVerseBookmarkClick;
   window.renderCalendar = renderCalendar;
   window.renderHome = renderHome;
   window.setTheme = setTheme;
