@@ -484,7 +484,7 @@
           </div>
         </div>
 
-        <!-- Floating Verse Action Bar (In-Text Verse Highlighting & Bookmarks) -->
+        <!-- Floating Verse Action Bar (In-Text Verse Highlighting) -->
         <div class="verse-action-bar" id="verse-action-bar" style="display: none;" role="toolbar" aria-label="Verse options">
           <div class="verse-action-ref-box">
             <span class="verse-action-ref" id="verse-action-ref-text">Verse</span>
@@ -506,10 +506,6 @@
           </div>
           <div class="verse-action-divider"></div>
           <div class="verse-action-tools">
-            <button class="verse-tool-btn" id="btn-verse-bookmark" title="Bookmark Verse">
-              <span class="tool-icon">🔖</span>
-              <span class="tool-label" id="btn-verse-bookmark-label">Bookmark</span>
-            </button>
             <button class="verse-tool-btn" id="btn-verse-create-card" title="Create Shareable Scripture Card">
               <span class="tool-icon">🎨</span>
               <span class="tool-label">Card</span>
@@ -648,7 +644,7 @@
 
         <!-- Journal Highlights Tab (Requirement Phase 2) -->
         <div id="journal-highlights-tab" style="display: none;">
-          <!-- Filter pills for Highlights (All, Gold, Green, Blue, Purple, Bookmarked) -->
+          <!-- Filter pills for Highlights (All, Gold, Green, Blue, Purple) -->
           <div class="journal-tags-bar-wrap" id="journal-highlights-filter-wrap" style="display: flex; margin-bottom: 16px;">
             <div class="journal-tags-bar-label">🎨 Filter:</div>
             <div class="journal-tags-bar" id="highlights-color-bar">
@@ -657,7 +653,6 @@
               <button class="journal-tag-pill" data-highlight-filter="green">🟢 Emerald <span class="tag-pill-count" id="count-hl-green">0</span></button>
               <button class="journal-tag-pill" data-highlight-filter="blue">🔵 Sky <span class="tag-pill-count" id="count-hl-blue">0</span></button>
               <button class="journal-tag-pill" data-highlight-filter="purple">🟣 Purple <span class="tag-pill-count" id="count-hl-purple">0</span></button>
-              <button class="journal-tag-pill" data-highlight-filter="bookmarks">🔖 Bookmarks <span class="tag-pill-count" id="count-hl-bookmarks">0</span></button>
             </div>
           </div>
           <div id="journal-highlights-list">

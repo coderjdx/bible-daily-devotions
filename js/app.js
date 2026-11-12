@@ -20,7 +20,7 @@
     journalCategory: 'all',      // 'all', 'devotions', 'sunday', 'highlights', 'gallery'
     selectedTagFilter: null,     // null or tag string (e.g. 'faith')
     selectedVerse: null,         // currently active verse in devotion view
-    activeHighlightFilter: 'all', // 'all', 'gold', 'green', 'blue', 'purple', 'bookmarks'
+    activeHighlightFilter: 'all', // 'all', 'gold', 'green', 'blue', 'purple'
     devotionTags: [],            // array of tags for active devotion
     sundayTags: [],              // array of tags for Sunday modal
     activeSundayDateStr: null,   // active date for Sunday modal
@@ -263,8 +263,6 @@
     el.verseActionBar = document.getElementById('verse-action-bar');
     el.verseActionRefText = document.getElementById('verse-action-ref-text');
     el.verseActionSubText = document.getElementById('verse-action-sub-text');
-    el.btnVerseBookmark = document.getElementById('btn-verse-bookmark');
-    el.btnVerseBookmarkLabel = document.getElementById('btn-verse-bookmark-label');
     el.btnVerseCreateCard = document.getElementById('btn-verse-create-card');
     el.btnVerseCopy = document.getElementById('btn-verse-copy');
     el.btnVerseClear = document.getElementById('btn-verse-clear');
@@ -1262,13 +1260,6 @@
         if (color) handleVerseColorClick(color);
       });
     });
-
-    if (el.btnVerseBookmark) {
-      el.btnVerseBookmark.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleVerseBookmarkClick();
-      });
-    }
 
     if (el.btnVerseCopy) {
       el.btnVerseCopy.addEventListener('click', (e) => {
@@ -2659,21 +2650,17 @@
               vDiv.classList.add('verse-highlighted', `highlight-${existingHl.color}`);
             }
 
-            const bookmarkHtml = (existingHl && existingHl.isBookmarked)
-              ? `<span class="verse-bookmark-badge" title="Bookmarked">🔖</span>`
-              : '';
-
             // Check if verse has poem lines
             if (item.poem && item.poem.length > 0) {
               const lines = (item.text || '').split('\n');
-              let html = `<span class="verse-num">${item.number}</span>${bookmarkHtml}`;
+              let html = `<span class="verse-num">${item.number}</span>`;
               lines.forEach((line, lineIdx) => {
                 const poemMeta = item.poem[lineIdx] || { level: 1 };
                 html += `<div class="verse-poem-line level-${poemMeta.level || 1}">${line}</div>`;
               });
               vDiv.innerHTML = html;
             } else {
-              vDiv.innerHTML = `<span class="verse-num">${item.number}</span><span class="verse-text">${item.text || ''}</span>${bookmarkHtml}`;
+              vDiv.innerHTML = `<span class="verse-num">${item.number}</span><span class="verse-text">${item.text || ''}</span>`;
             }
 
             vDiv.addEventListener('click', (e) => {
@@ -2724,10 +2711,6 @@
       el.verseActionSubText.textContent = 'Tap color to highlight';
     }
     document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
-    if (el.btnVerseBookmark) {
-      el.btnVerseBookmark.classList.remove('active');
-      if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
-    }
     if (el.btnVerseClear) {
       el.btnVerseClear.style.display = 'none';
     }
@@ -2754,18 +2737,8 @@
         }
       });
 
-      if (el.btnVerseBookmark) {
-        if (currentHl && currentHl.isBookmarked) {
-          el.btnVerseBookmark.classList.add('active');
-          if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmarked';
-        } else {
-          el.btnVerseBookmark.classList.remove('active');
-          if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
-        }
-      }
-
       if (el.btnVerseClear) {
-        if (currentHl && (currentHl.color || currentHl.isBookmarked)) {
+        if (currentHl && currentHl.color) {
           el.btnVerseClear.style.display = 'inline-flex';
         } else {
           el.btnVerseClear.style.display = 'none';
@@ -2784,8 +2757,7 @@
 
   async function handleVerseColorClick(color) {
     if (!state.selectedVerse) return;
-    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl, currentHl } = state.selectedVerse;
-    const isBookmarked = currentHl ? Boolean(currentHl.isBookmarked) : false;
+    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl } = state.selectedVerse;
 
     // Immediate optimistic DOM update
     if (vEl) {
@@ -2813,7 +2785,6 @@
       color,
       text,
       translation,
-      isBookmarked,
       dayNum,
       dateStr
     };
@@ -2821,60 +2792,6 @@
     await window.devotionStore.saveHighlight(record);
 
     showToast(`Highlighted ${reference} ✨`);
-  }
-
-  async function handleVerseBookmarkClick() {
-    if (!state.selectedVerse) return;
-    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl, currentHl } = state.selectedVerse;
-    const newBookmarked = !(currentHl && currentHl.isBookmarked);
-    const currentColor = (currentHl && currentHl.color) ? currentHl.color : 'gold';
-
-    // Immediate optimistic DOM update
-    if (vEl) {
-      let badge = vEl.querySelector('.verse-bookmark-badge');
-      if (newBookmarked) {
-        if (!badge) {
-          badge = document.createElement('span');
-          badge.className = 'verse-bookmark-badge';
-          badge.title = 'Bookmarked';
-          badge.textContent = '🔖';
-          const numEl = vEl.querySelector('.verse-num');
-          if (numEl) numEl.insertAdjacentElement('afterend', badge);
-          else vEl.prepend(badge);
-        }
-      } else {
-        if (badge) badge.remove();
-      }
-    }
-
-    if (el.btnVerseBookmark) {
-      el.btnVerseBookmark.classList.toggle('active', newBookmarked);
-      if (el.btnVerseBookmarkLabel) {
-        el.btnVerseBookmarkLabel.textContent = newBookmarked ? 'Bookmarked' : 'Bookmark';
-      }
-    }
-    if (el.btnVerseClear) {
-      el.btnVerseClear.style.display = 'inline-flex';
-    }
-
-    const record = {
-      id,
-      reference,
-      bookId,
-      bookName,
-      chapter,
-      verse,
-      color: currentColor,
-      text,
-      translation,
-      isBookmarked: newBookmarked,
-      dayNum,
-      dateStr
-    };
-    state.selectedVerse.currentHl = record;
-    await window.devotionStore.saveHighlight(record);
-
-    showToast(newBookmarked ? `Bookmarked ${reference} 🔖` : `Removed bookmark from ${reference}`);
   }
 
   function handleVerseCopyClick() {
@@ -2899,15 +2816,9 @@
     // Immediate optimistic DOM update
     if (vEl) {
       vEl.classList.remove('verse-highlighted', 'highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
-      const badge = vEl.querySelector('.verse-bookmark-badge');
-      if (badge) badge.remove();
     }
 
     document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
-    if (el.btnVerseBookmark) {
-      el.btnVerseBookmark.classList.remove('active');
-      if (el.btnVerseBookmarkLabel) el.btnVerseBookmarkLabel.textContent = 'Bookmark';
-    }
     if (el.verseActionSubText) {
       el.verseActionSubText.textContent = 'Tap color to highlight';
     }
@@ -3589,7 +3500,6 @@
     const countGreen = filtered.filter(h => h.color === 'green').length;
     const countBlue = filtered.filter(h => h.color === 'blue').length;
     const countPurple = filtered.filter(h => h.color === 'purple').length;
-    const countBookmarks = filtered.filter(h => h.isBookmarked).length;
 
     // Update count labels in filter bar
     const cAll = document.getElementById('count-hl-all');
@@ -3602,15 +3512,11 @@
     if (cBlue) cBlue.textContent = countBlue;
     const cPurple = document.getElementById('count-hl-purple');
     if (cPurple) cPurple.textContent = countPurple;
-    const cBookmarks = document.getElementById('count-hl-bookmarks');
-    if (cBookmarks) cBookmarks.textContent = countBookmarks;
 
     // Apply color filter
     const activeFilter = state.activeHighlightFilter || 'all';
     let displayList = filtered;
-    if (activeFilter === 'bookmarks') {
-      displayList = displayList.filter(h => h.isBookmarked);
-    } else if (activeFilter !== 'all') {
+    if (activeFilter !== 'all') {
       displayList = displayList.filter(h => h.color === activeFilter);
     }
 
@@ -3627,7 +3533,7 @@
           <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
           <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No Highlights Yet</h3>
           <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 340px; margin: 0 auto 16px;">
-            Tap any verse while reading your daily devotion to highlight in Gold, Emerald, Sky, or Purple, and save bookmarks.
+            Tap any verse while reading your daily devotion to highlight in Gold, Emerald, Sky, or Purple.
           </p>
           <button class="btn-primary" id="btn-empty-hl-goto-devotion" style="padding: 8px 18px; font-size: 0.82rem; border-radius: var(--radius-full);">
             📖 Go to Today's Devotion
@@ -3665,7 +3571,6 @@
             <span class="highlight-color-indicator ${hl.color || 'gold'}"></span>
             <span class="highlight-reference">${hl.reference}</span>
             <span class="highlight-trans-tag">${hl.translation || 'BSB'}</span>
-            ${hl.isBookmarked ? '<span class="highlight-bookmark-icon" title="Bookmarked">🔖</span>' : ''}
           </div>
           ${dateLabel ? `<div class="highlight-date-badge">${dateLabel}</div>` : ''}
         </div>
@@ -4945,7 +4850,6 @@
   window.openVerseActionBar = openVerseActionBar;
   window.closeVerseActionBar = closeVerseActionBar;
   window.handleVerseColorClick = handleVerseColorClick;
-  window.handleVerseBookmarkClick = handleVerseBookmarkClick;
   window.renderCalendar = renderCalendar;
   window.renderHome = renderHome;
   window.setTheme = setTheme;

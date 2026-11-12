@@ -164,23 +164,16 @@ def run_test():
     print("Green highlight status:", green_status)
     assert green_status['hasGreenClass'] and not green_status['hasGoldClass'], "Emerald class not switched"
 
-    # Toggle Bookmark
-    print("Toggling Bookmark...")
-    bookmark_status = evaluate("""
+    # Confirm Bookmark button was removed
+    print("Verifying bookmark button is removed...")
+    bookmark_btn_check = evaluate("""
         (() => {
             const bmBtn = document.getElementById('btn-verse-bookmark');
-            if (!bmBtn) return null;
-            bmBtn.click();
-            const v = document.querySelector('.verse-item.verse-selected');
-            const badge = v.querySelector('.verse-bookmark-badge');
-            return {
-                btnActive: bmBtn.classList.contains('active'),
-                badgePresent: !!badge
-            };
+            return { bmBtnPresent: !!bmBtn };
         })()
     """)
-    print("Bookmark status:", bookmark_status)
-    assert bookmark_status['btnActive'] and bookmark_status['badgePresent'], "Bookmark badge not applied"
+    print("Bookmark button check:", bookmark_btn_check)
+    assert not bookmark_btn_check['bmBtnPresent'], "Bookmark button should have been removed"
 
     # Verify IndexedDB record for this verse
     idb_record = evaluate(f"""
@@ -189,7 +182,7 @@ def run_test():
         }})()
     """)
     print("IndexedDB Highlight Record:", idb_record)
-    assert idb_record and idb_record['color'] == 'green' and idb_record['isBookmarked'], "IDB highlight record mismatch"
+    assert idb_record and idb_record['color'] == 'green', "IDB highlight record mismatch"
 
     # Capture screenshot of highlighted verse in devotion view (Dark)
     time.sleep(0.5)
@@ -243,13 +236,11 @@ def run_test():
                 gold: document.getElementById('count-hl-gold') ? document.getElementById('count-hl-gold').textContent : null,
                 green: document.getElementById('count-hl-green') ? document.getElementById('count-hl-green').textContent : null,
                 blue: document.getElementById('count-hl-blue') ? document.getElementById('count-hl-blue').textContent : null,
-                purple: document.getElementById('count-hl-purple') ? document.getElementById('count-hl-purple').textContent : null,
-                bookmarks: document.getElementById('count-hl-bookmarks') ? document.getElementById('count-hl-bookmarks').textContent : null
+                purple: document.getElementById('count-hl-purple') ? document.getElementById('count-hl-purple').textContent : null
             };
             const cardData = Array.from(cards).map(c => ({
                 id: c.dataset.id,
-                ref: c.querySelector('.highlight-reference') ? c.querySelector('.highlight-reference').textContent : '',
-                hasBookmark: !!c.querySelector('.highlight-bookmark-icon')
+                ref: c.querySelector('.highlight-reference') ? c.querySelector('.highlight-reference').textContent : ''
             }));
             return { cardCount: cards.length, counts, cardData };
         })()
@@ -259,27 +250,30 @@ def run_test():
     assert highlights_tab_data['counts']['all'] == str(highlights_tab_data['cardCount']), "All count mismatch"
     assert highlights_tab_data['counts']['green'] == '1', "Green count expected 1"
     assert highlights_tab_data['counts']['purple'] == '1', "Purple count expected 1"
-    assert highlights_tab_data['counts']['bookmarks'] == '1', "Bookmarks count expected 1"
 
     capture_screenshot("screenshot_journal_highlights_dark.png")
 
-    # Step 3: Test Filter Pills (Bookmarks only)
+    # Step 3: Test Filter Pills (Green only)
     print("\n--- Step 3: Testing Color Filter Pills ---")
-    bm_filter_res = evaluate("""
+    green_filter_res = evaluate("""
         (async () => {
-            const bmPill = document.querySelector('[data-highlight-filter="bookmarks"]');
-            if (!bmPill) return null;
-            bmPill.click();
+            const greenPill = document.querySelector('[data-highlight-filter="green"]');
+            if (!greenPill) return null;
+            greenPill.click();
             await new Promise(r => setTimeout(r, 250));
             const visibleCards = document.querySelectorAll('.journal-highlight-card');
             return {
-                pillActive: bmPill.classList.contains('active'),
+                pillActive: greenPill.classList.contains('active'),
                 visibleCards: visibleCards.length
             };
         })()
     """)
-    print("Bookmarks filter result:", bm_filter_res)
-    assert bm_filter_res['visibleCards'] == 1, f"Expected 1 bookmarked card, got {bm_filter_res['visibleCards']}"
+    print("Green filter result:", green_filter_res)
+    assert green_filter_res['visibleCards'] == 1, f"Expected 1 green highlight card, got {green_filter_res['visibleCards']}"
+
+    # Verify bookmarks filter is removed
+    bm_filter_present = evaluate("!!document.querySelector('[data-highlight-filter=\"bookmarks\"]')")
+    assert not bm_filter_present, "Bookmarks filter should not be present"
 
     # Reset filter to 'all'
     evaluate("""
