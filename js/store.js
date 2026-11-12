@@ -6,7 +6,7 @@
 class DevotionStore {
   constructor() {
     this.dbName = 'DailyDevotionsDB';
-    this.dbVersion = 2;
+    this.dbVersion = 3;
     this.db = null;
     this.initPromise = this.initDB();
   }
@@ -46,6 +46,11 @@ class DevotionStore {
         // Store for Text-To-Speech audio cache: key is TTS ID
         if (!db.objectStoreNames.contains('tts_audio_cache')) {
           db.createObjectStore('tts_audio_cache', { keyPath: 'id' });
+        }
+
+        // Store for Sunday church services: key is date string YYYY-MM-DD
+        if (!db.objectStoreNames.contains('sunday_services')) {
+          db.createObjectStore('sunday_services', { keyPath: 'date' });
         }
       };
 
@@ -161,13 +166,14 @@ class DevotionStore {
     return localStorage.getItem(`note_${dateStr}`) || '';
   }
 
-  async saveNote(dateStr, noteText) {
+  async saveNote(dateStr, noteText, tags = []) {
     const updatedAt = new Date().toISOString();
+    const tagList = Array.isArray(tags) ? tags : [];
     try {
       const store = await this.getStore('notes', 'readwrite');
       if (store) {
         return new Promise((res) => {
-          const req = store.put({ date: dateStr, note: noteText, updatedAt });
+          const req = store.put({ date: dateStr, note: noteText, tags: tagList, updatedAt });
           req.onsuccess = () => res(true);
           req.onerror = () => res(false);
         });
@@ -176,7 +182,41 @@ class DevotionStore {
       console.warn('Fallback saveNote', e);
     }
     localStorage.setItem(`note_${dateStr}`, noteText);
+    localStorage.setItem(`note_tags_${dateStr}`, JSON.stringify(tagList));
     return true;
+  }
+
+  async getNoteRecord(dateStr) {
+    try {
+      const store = await this.getStore('notes');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.get(dateStr);
+          req.onsuccess = () => {
+            if (req.result) {
+              res({
+                date: req.result.date || dateStr,
+                note: req.result.note || '',
+                tags: Array.isArray(req.result.tags) ? req.result.tags : [],
+                updatedAt: req.result.updatedAt || ''
+              });
+            } else {
+              res(null);
+            }
+          };
+          req.onerror = () => res(null);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback getNoteRecord', e);
+    }
+    const val = localStorage.getItem(`note_${dateStr}`);
+    if (!val) return null;
+    let tags = [];
+    try {
+      tags = JSON.parse(localStorage.getItem(`note_tags_${dateStr}`) || '[]');
+    } catch (e) {}
+    return { date: dateStr, note: val, tags, updatedAt: '' };
   }
 
   async removeNote(dateStr) {
@@ -194,6 +234,7 @@ class DevotionStore {
     }
     try {
       localStorage.removeItem(`note_${dateStr}`);
+      localStorage.removeItem(`note_tags_${dateStr}`);
     } catch (e) {}
     return true;
   }
@@ -208,7 +249,13 @@ class DevotionStore {
       if (store) {
         return new Promise((res) => {
           const req = store.getAll();
-          req.onsuccess = () => res(req.result || []);
+          req.onsuccess = () => {
+            const list = (req.result || []).map(r => ({
+              ...r,
+              tags: Array.isArray(r.tags) ? r.tags : []
+            }));
+            res(list);
+          };
           req.onerror = () => res([]);
         });
       }
@@ -218,12 +265,141 @@ class DevotionStore {
     const list = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('note_')) {
+      if (key && key.startsWith('note_') && !key.startsWith('note_tags_')) {
         const date = key.replace('note_', '');
-        list.push({ date, note: localStorage.getItem(key), updatedAt: new Date().toISOString() });
+        let tags = [];
+        try {
+          tags = JSON.parse(localStorage.getItem(`note_tags_${date}`) || '[]');
+        } catch (e) {}
+        list.push({ date, note: localStorage.getItem(key), tags, updatedAt: new Date().toISOString() });
       }
     }
     return list;
+  }
+
+  // --- Sunday Church Services ---
+  async getSundayService(dateStr) {
+    try {
+      const store = await this.getStore('sunday_services');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.get(dateStr);
+          req.onsuccess = () => res(req.result || null);
+          req.onerror = () => res(null);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback getSundayService', e);
+    }
+    const val = localStorage.getItem(`sunday_service_${dateStr}`);
+    return val ? JSON.parse(val) : null;
+  }
+
+  async saveSundayService(dateStr, data) {
+    const updatedAt = new Date().toISOString();
+    const record = {
+      date: dateStr,
+      attended: Boolean(data.attended),
+      title: (data.title || '').trim(),
+      speaker: (data.speaker || '').trim(),
+      notes: (data.notes || '').trim(),
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      updatedAt
+    };
+    try {
+      const store = await this.getStore('sunday_services', 'readwrite');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.put(record);
+          req.onsuccess = () => res(true);
+          req.onerror = () => res(false);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback saveSundayService', e);
+    }
+    localStorage.setItem(`sunday_service_${dateStr}`, JSON.stringify(record));
+    return true;
+  }
+
+  async deleteSundayService(dateStr) {
+    try {
+      const store = await this.getStore('sunday_services', 'readwrite');
+      if (store) {
+        await new Promise((res) => {
+          const req = store.delete(dateStr);
+          req.onsuccess = req.onerror = () => res(true);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback deleteSundayService', e);
+    }
+    try {
+      localStorage.removeItem(`sunday_service_${dateStr}`);
+    } catch (e) {}
+    return true;
+  }
+
+  async getAllSundayServices() {
+    try {
+      const store = await this.getStore('sunday_services');
+      if (store) {
+        return new Promise((res) => {
+          const req = store.getAll();
+          req.onsuccess = () => res(req.result || []);
+          req.onerror = () => res([]);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback getAllSundayServices', e);
+    }
+    const list = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sunday_service_')) {
+        try {
+          list.push(JSON.parse(localStorage.getItem(key)));
+        } catch (e) {}
+      }
+    }
+    return list;
+  }
+
+  // --- Aggregate Tags Query (Devotions + Sunday Services) ---
+  async getAllTags() {
+    const tagSet = new Set();
+    const notes = await this.getAllNotes();
+    notes.forEach(n => {
+      if (Array.isArray(n.tags)) {
+        n.tags.forEach(t => {
+          const clean = t.trim().replace(/^#+/, '');
+          if (clean) tagSet.add(clean);
+        });
+      }
+      if (n.note && typeof n.note === 'string') {
+        try {
+          const parsed = JSON.parse(n.note);
+          if (parsed && Array.isArray(parsed.tags)) {
+            parsed.tags.forEach(t => {
+              const clean = t.trim().replace(/^#+/, '');
+              if (clean) tagSet.add(clean);
+            });
+          }
+        } catch (e) {}
+      }
+    });
+
+    const services = await this.getAllSundayServices();
+    services.forEach(s => {
+      if (Array.isArray(s.tags)) {
+        s.tags.forEach(t => {
+          const clean = t.trim().replace(/^#+/, '');
+          if (clean) tagSet.add(clean);
+        });
+      }
+    });
+
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
   }
 
   // --- Images ---
@@ -692,9 +868,28 @@ class DevotionStore {
       }
     }
 
-    // B. Also delete journal entries and images as required!
+    // B. Also delete journal entries, images, and Sunday services as required!
     await this.deleteJournalEntries(scopeMonth);
     await this.deleteImages(scopeMonth);
+
+    try {
+      const sunStore = await this.getStore('sunday_services', 'readwrite');
+      if (sunStore) {
+        if (!scopeMonth) {
+          await new Promise((res) => {
+            const req = sunStore.clear();
+            req.onsuccess = req.onerror = () => res(true);
+          });
+        } else {
+          const allServices = await this.getAllSundayServices();
+          for (const s of allServices) {
+            if (s.date && s.date.startsWith(scopeMonth)) {
+              await this.deleteSundayService(s.date);
+            }
+          }
+        }
+      }
+    } catch (e) {}
 
     return true;
   }
@@ -758,6 +953,7 @@ class DevotionStore {
     const completions = await this.getAllCompletions();
     const notes = await this.getAllNotes();
     const images = await this.getAllImages();
+    const sundayServices = await this.getAllSundayServices();
     const settings = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -767,12 +963,13 @@ class DevotionStore {
     }
 
     return {
-      version: 2,
+      version: 3,
       appName: 'Daily Devotions',
       exportedAt: new Date().toISOString(),
       completions,
       notes,
       images,
+      sundayServices,
       settings
     };
   }
@@ -795,7 +992,16 @@ class DevotionStore {
     if (Array.isArray(imported.notes)) {
       for (const n of imported.notes) {
         if (n.date && n.note) {
-          await this.saveNote(n.date, n.note);
+          await this.saveNote(n.date, n.note, n.tags || []);
+        }
+      }
+    }
+
+    // 3. Import sundayServices
+    if (Array.isArray(imported.sundayServices)) {
+      for (const s of imported.sundayServices) {
+        if (s.date) {
+          await this.saveSundayService(s.date, s);
         }
       }
     }

@@ -16,7 +16,12 @@
     fontSize: 'normal',          // 'small', 'normal', 'large', 'xlarge'
     fontFamily: 'serif',         // 'serif', 'sans'
     theme: 'dark',
-    journalTab: 'entries',       // 'entries', 'gallery'
+    journalTab: 'entries',       // 'entries', 'gallery' (legacy compatibility)
+    journalCategory: 'all',      // 'all', 'devotions', 'sunday', 'gallery'
+    selectedTagFilter: null,     // null or tag string (e.g. 'faith')
+    devotionTags: [],            // array of tags for active devotion
+    sundayTags: [],              // array of tags for Sunday modal
+    activeSundayDateStr: null,   // active date for Sunday modal
     selectedJournalMonth: '2026-11',
     soapFormatEnabled: false,
     isCurrentDayLocked: false
@@ -127,6 +132,15 @@
     el.heroActionIcon = document.getElementById('hero-action-icon');
     el.heroActionText = document.getElementById('hero-action-text');
 
+    // Home Sunday Church Service Card
+    el.homeSundayCard = document.getElementById('home-sunday-card');
+    el.homeSundayAttendancePill = document.getElementById('home-sunday-attendance-pill');
+    el.homeSundayTitle = document.getElementById('home-sunday-title');
+    el.homeSundayDesc = document.getElementById('home-sunday-desc');
+    el.btnHomeSundayAction = document.getElementById('btn-home-sunday-action');
+    el.homeSundayActionIcon = document.getElementById('home-sunday-action-icon');
+    el.homeSundayActionText = document.getElementById('home-sunday-action-text');
+
     // Stats
     el.statStreakCount = document.getElementById('stat-streak-count');
     el.statCompletedCount = document.getElementById('stat-completed-count');
@@ -182,6 +196,13 @@
     el.devotionImagePreviewContainer = document.getElementById('devotion-image-preview-container');
     el.btnRemoveImage = document.getElementById('btn-remove-image');
 
+    // Devotion Tags
+    el.devotionTagsSection = document.getElementById('devotion-tags-section');
+    el.devotionTagsChips = document.getElementById('devotion-tags-chips');
+    el.devotionTagInput = document.getElementById('devotion-tag-input');
+    el.btnAddDevotionTag = document.getElementById('btn-add-devotion-tag');
+    el.devotionTagSuggestions = document.getElementById('devotion-tag-suggestions');
+
     // Floating Journal Notepad Sheet Elements (Mobile Portrait)
     el.devotionNotesSection = document.getElementById('devotion-notes-section');
     el.btnFloatingNotepad = document.getElementById('btn-floating-notepad');
@@ -209,10 +230,34 @@
     el.journalMonthSelect = document.getElementById('journal-month-select');
     el.btnToggleEntries = document.getElementById('btn-toggle-entries');
     el.btnToggleGallery = document.getElementById('btn-toggle-gallery');
+    el.journalCategoryToggle = document.getElementById('journal-category-toggle');
+    el.btnJournalCatAll = document.getElementById('btn-journal-cat-all');
+    el.btnJournalCatDevotions = document.getElementById('btn-journal-cat-devotions');
+    el.btnJournalCatSunday = document.getElementById('btn-journal-cat-sunday');
+    el.btnJournalCatGallery = document.getElementById('btn-journal-cat-gallery');
+    el.journalTagsBarWrap = document.getElementById('journal-tags-bar-wrap');
+    el.journalTagsBar = document.getElementById('journal-tags-bar');
     el.journalEntriesTab = document.getElementById('journal-entries-tab');
     el.journalGalleryTab = document.getElementById('journal-gallery-tab');
     el.journalEntriesList = document.getElementById('journal-entries-list');
     el.journalGalleryGrid = document.getElementById('journal-gallery-grid');
+
+    // Sunday Church Service Modal
+    el.modalSundayService = document.getElementById('modal-sunday-service');
+    el.sundayModalDate = document.getElementById('sunday-modal-date');
+    el.sundaySaveBadge = document.getElementById('sunday-save-badge');
+    el.btnCloseSundayModal = document.getElementById('btn-close-sunday-modal');
+    el.sundayAttendanceCard = document.getElementById('sunday-attendance-card');
+    el.sundayAttendanceToggle = document.getElementById('sunday-attendance-toggle');
+    el.sundayTitleInput = document.getElementById('sunday-title-input');
+    el.sundaySpeakerInput = document.getElementById('sunday-speaker-input');
+    el.sundayNotesInput = document.getElementById('sunday-notes-input');
+    el.sundayTagsChips = document.getElementById('sunday-tags-chips');
+    el.sundayTagInput = document.getElementById('sunday-tag-input');
+    el.btnAddSundayTag = document.getElementById('btn-add-sunday-tag');
+    el.sundayTagSuggestions = document.getElementById('sunday-tag-suggestions');
+    el.btnDoneSundayModal = document.getElementById('btn-done-sunday-modal');
+    el.btnDeleteSundayModal = document.getElementById('btn-delete-sunday-modal');
 
     // Settings View - Alarms & Notifications
     el.settingsSnoozeCard = document.getElementById('settings-snooze-card');
@@ -374,14 +419,18 @@
     updateThemeMeta(savedTheme);
   }
 
-  function toggleTheme() {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  function setTheme(themeName) {
+    state.theme = themeName;
     document.documentElement.setAttribute('data-theme', state.theme);
     window.devotionStore.setSetting('theme', state.theme);
     if (el.btnThemeToggle) {
       el.btnThemeToggle.textContent = state.theme === 'dark' ? '🌙' : '☀️';
     }
     updateThemeMeta(state.theme);
+  }
+
+  function toggleTheme() {
+    setTheme(state.theme === 'dark' ? 'light' : 'dark');
     showToast(`Switched to ${state.theme === 'dark' ? 'Dark Midnight' : 'Clean Light'} theme`);
   }
 
@@ -578,9 +627,121 @@
   // --- Journal Autosave & Floating Sheet Helpers ---
   let noteSaveTimeout = null;
 
+  function normalizeTag(raw) {
+    if (!raw) return '';
+    return raw.trim().replace(/^#+/, '').replace(/\s+/g, '-').toLowerCase();
+  }
+
+  // --- Tag UI Rendering Helpers ---
+  function renderTagChips(containerEl, tags, isLocked, onRemove) {
+    if (!containerEl) return;
+    containerEl.innerHTML = '';
+    if (!tags || !tags.length) {
+      containerEl.style.display = 'none';
+      return;
+    }
+    containerEl.style.display = 'flex';
+    tags.forEach((tag, idx) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `<span>#${escapeHtml(tag)}</span>`;
+      if (!isLocked) {
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'tag-chip-del';
+        delBtn.title = `Remove #${tag}`;
+        delBtn.innerHTML = '✕';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onRemove(idx);
+        });
+        chip.appendChild(delBtn);
+      }
+      containerEl.appendChild(chip);
+    });
+  }
+
+  async function renderTagSuggestions(containerEl, currentTags, isLocked, onSelect) {
+    if (!containerEl) return;
+    if (isLocked) {
+      containerEl.style.display = 'none';
+      return;
+    }
+    const allTags = await window.devotionStore.getAllTags();
+    const currentSet = new Set((currentTags || []).map(t => t.toLowerCase()));
+    const available = allTags.filter(t => !currentSet.has(t.toLowerCase())).slice(0, 8);
+
+    if (!available.length) {
+      containerEl.style.display = 'none';
+      containerEl.innerHTML = '';
+      return;
+    }
+
+    containerEl.style.display = 'flex';
+    containerEl.innerHTML = '<span class="tag-suggestion-label">Suggestions:</span>';
+    available.forEach(tag => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'tag-suggestion-pill';
+      pill.textContent = `+#${tag}`;
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(tag);
+      });
+      containerEl.appendChild(pill);
+    });
+  }
+
+  function renderDevotionTagsUI() {
+    renderTagChips(el.devotionTagsChips, state.devotionTags, state.isCurrentDayLocked, (idx) => {
+      state.devotionTags.splice(idx, 1);
+      renderDevotionTagsUI();
+      triggerNotesSave(state.soapFormatEnabled);
+    });
+    renderTagSuggestions(el.devotionTagSuggestions, state.devotionTags, state.isCurrentDayLocked, (tag) => {
+      addDevotionTag(tag);
+    });
+  }
+
+  function addDevotionTag(rawTag) {
+    if (state.isCurrentDayLocked) return;
+    const clean = normalizeTag(rawTag);
+    if (!clean) return;
+    if (!state.devotionTags.some(t => t.toLowerCase() === clean)) {
+      state.devotionTags.push(clean);
+      renderDevotionTagsUI();
+      triggerNotesSave(state.soapFormatEnabled);
+    }
+    if (el.devotionTagInput) el.devotionTagInput.value = '';
+  }
+
+  function renderSundayTagsUI() {
+    renderTagChips(el.sundayTagsChips, state.sundayTags, false, (idx) => {
+      state.sundayTags.splice(idx, 1);
+      renderSundayTagsUI();
+      triggerSundaySave();
+    });
+    renderTagSuggestions(el.sundayTagSuggestions, state.sundayTags, false, (tag) => {
+      addSundayTag(tag);
+    });
+  }
+
+  function addSundayTag(rawTag) {
+    const clean = normalizeTag(rawTag);
+    if (!clean) return;
+    if (!state.sundayTags.some(t => t.toLowerCase() === clean)) {
+      state.sundayTags.push(clean);
+      renderSundayTagsUI();
+      triggerSundaySave();
+    }
+    if (el.sundayTagInput) el.sundayTagInput.value = '';
+  }
+
   async function executeNotesSave(isSoap) {
     if (state.isCurrentDayLocked) return;
     const dateStr = getDayDateStr(state.currentDay);
+    const tags = state.devotionTags || [];
 
     if (isSoap) {
       const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
@@ -588,7 +749,7 @@
       const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
       const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
 
-      if (!hasUserReflections) {
+      if (!hasUserReflections && tags.length === 0) {
         if (window.devotionStore.deleteNote) {
           await window.devotionStore.deleteNote(dateStr);
         }
@@ -605,12 +766,13 @@
         scripture: scriptureVal,
         observation: el.soapObservationInput ? el.soapObservationInput.value : '',
         application: el.soapApplicationInput ? el.soapApplicationInput.value : '',
-        prayer: el.soapPrayerInput ? el.soapPrayerInput.value : ''
+        prayer: el.soapPrayerInput ? el.soapPrayerInput.value : '',
+        tags: tags
       };
-      await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj));
+      await window.devotionStore.saveNote(dateStr, JSON.stringify(soapObj), tags);
     } else {
       const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
-      if (!stdText) {
+      if (!stdText && tags.length === 0) {
         if (window.devotionStore.deleteNote) {
           await window.devotionStore.deleteNote(dateStr);
         }
@@ -618,7 +780,7 @@
         await updateNotepadBadge();
         return;
       }
-      await window.devotionStore.saveNote(dateStr, el.devotionNotesInput.value);
+      await window.devotionStore.saveNote(dateStr, el.devotionNotesInput ? el.devotionNotesInput.value : '', tags);
     }
     if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '<span>✓</span> Saved';
     await updateNotepadBadge();
@@ -628,20 +790,21 @@
     if (state.isCurrentDayLocked) return;
     clearTimeout(noteSaveTimeout);
 
+    const tags = state.devotionTags || [];
     if (isSoap) {
       const obsVal = el.soapObservationInput ? el.soapObservationInput.value.trim() : '';
       const appVal = el.soapApplicationInput ? el.soapApplicationInput.value.trim() : '';
       const prayerVal = el.soapPrayerInput ? el.soapPrayerInput.value.trim() : '';
       const hasUserReflections = Boolean(obsVal || appVal || prayerVal);
 
-      if (!hasUserReflections) {
+      if (!hasUserReflections && tags.length === 0) {
         if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
         noteSaveTimeout = setTimeout(() => executeNotesSave(true), 300);
         return;
       }
     } else {
       const stdText = el.devotionNotesInput ? el.devotionNotesInput.value.trim() : '';
-      if (!stdText) {
+      if (!stdText && tags.length === 0) {
         if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = '';
         noteSaveTimeout = setTimeout(() => executeNotesSave(false), 300);
         return;
@@ -664,22 +827,24 @@
     if (!el.notepadHasNotesBadge) return;
     try {
       const dateStr = getDayDateStr(state.currentDay);
-      const note = await window.devotionStore.getNote(dateStr);
+      const rec = await window.devotionStore.getNoteRecord(dateStr);
       let hasContent = false;
-      if (note) {
-        if (typeof note === 'string') {
+      if (rec) {
+        if (rec.tags && rec.tags.length > 0) hasContent = true;
+        const note = rec.note;
+        if (note && typeof note === 'string') {
           try {
             const parsed = JSON.parse(note);
             if (parsed && typeof parsed === 'object') {
               const obs = (parsed.observation || '').trim();
               const app = (parsed.application || '').trim();
               const pray = (parsed.prayer || '').trim();
-              hasContent = Boolean(obs || app || pray);
-            } else {
-              hasContent = Boolean(note.trim());
+              if (obs || app || pray) hasContent = true;
+            } else if (note.trim()) {
+              hasContent = true;
             }
           } catch (e) {
-            hasContent = Boolean(note.trim());
+            if (note.trim()) hasContent = true;
           }
         }
       }
@@ -687,6 +852,143 @@
     } catch (err) {
       console.warn('Error updating notepad badge:', err);
     }
+  }
+
+  // --- Sunday Church Service Controller ---
+  let activeSundayDateStr = null;
+  let sundaySaveTimeout = null;
+
+  function checkIsSunday(dateVal) {
+    if (typeof dateVal === 'number') {
+      return new Date(2026, 10, dateVal).getDay() === 0;
+    }
+    if (typeof dateVal === 'string') {
+      const parts = dateVal.split('-');
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getDay() === 0;
+      }
+    }
+    return new Date().getDay() === 0;
+  }
+
+  async function updateHomeSundayCard() {
+    if (!el.homeSundayCard) return;
+    const todayNum = state.simulatedTodayDay;
+    const todayStr = getDayDateStr(todayNum);
+    const isSunday = checkIsSunday(todayNum) || (new Date().getDay() === 0);
+
+    if (!isSunday) {
+      el.homeSundayCard.style.display = 'none';
+      return;
+    }
+
+    el.homeSundayCard.style.display = 'block';
+    const rec = await window.devotionStore.getSundayService(todayStr);
+
+    if (rec && rec.attended) {
+      if (el.homeSundayAttendancePill) el.homeSundayAttendancePill.style.display = 'inline-flex';
+      if (el.homeSundayActionIcon) el.homeSundayActionIcon.textContent = '✍️';
+      if (el.homeSundayActionText) el.homeSundayActionText.textContent = 'Edit Sunday Service Notes';
+      if (rec.title) {
+        el.homeSundayDesc.textContent = `Sermon: "${rec.title}"${rec.speaker ? ' by ' + rec.speaker : ''}`;
+      } else {
+        el.homeSundayDesc.textContent = 'Attendance recorded for today’s church service.';
+      }
+    } else if (rec && (rec.title || rec.speaker || rec.notes || (rec.tags && rec.tags.length))) {
+      if (el.homeSundayAttendancePill) el.homeSundayAttendancePill.style.display = 'none';
+      if (el.homeSundayActionIcon) el.homeSundayActionIcon.textContent = '✍️';
+      if (el.homeSundayActionText) el.homeSundayActionText.textContent = 'Edit Sunday Service Notes';
+      if (rec.title) {
+        el.homeSundayDesc.textContent = `Sermon: "${rec.title}"${rec.speaker ? ' by ' + rec.speaker : ''}`;
+      } else {
+        el.homeSundayDesc.textContent = 'Continue your sermon takeaways and notes.';
+      }
+    } else {
+      if (el.homeSundayAttendancePill) el.homeSundayAttendancePill.style.display = 'none';
+      if (el.homeSundayActionIcon) el.homeSundayActionIcon.textContent = '✍️';
+      if (el.homeSundayActionText) el.homeSundayActionText.textContent = 'Record Sunday Service Notes';
+      el.homeSundayDesc.textContent = 'Mark your attendance and record sermon notes & takeaways for today.';
+    }
+  }
+
+  async function openSundayModal(dateStr) {
+    activeSundayDateStr = dateStr || getDayDateStr(state.simulatedTodayDay);
+    if (el.modalSundayService) {
+      el.modalSundayService.classList.add('active');
+    }
+
+    const { day, dateObj } = parseDateParts(activeSundayDateStr);
+    const dateFormatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    if (el.sundayModalDate) {
+      el.sundayModalDate.textContent = dateFormatted;
+    }
+
+    const rec = await window.devotionStore.getSundayService(activeSundayDateStr);
+    const attended = Boolean(rec && rec.attended);
+    if (el.sundayAttendanceToggle) {
+      el.sundayAttendanceToggle.checked = attended;
+    }
+    if (el.sundayAttendanceCard) {
+      el.sundayAttendanceCard.classList.toggle('attended', attended);
+    }
+    if (el.sundayTitleInput) el.sundayTitleInput.value = (rec && rec.title) || '';
+    if (el.sundaySpeakerInput) el.sundaySpeakerInput.value = (rec && rec.speaker) || '';
+    if (el.sundayNotesInput) el.sundayNotesInput.value = (rec && rec.notes) || '';
+    state.sundayTags = (rec && Array.isArray(rec.tags)) ? [...rec.tags] : [];
+
+    const hasData = Boolean(rec && (rec.attended || rec.title || rec.speaker || rec.notes || (rec.tags && rec.tags.length)));
+    if (el.btnDeleteSundayModal) {
+      el.btnDeleteSundayModal.style.display = hasData ? 'inline-flex' : 'none';
+    }
+
+    renderSundayTagsUI();
+    if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '';
+  }
+
+  function triggerSundaySave() {
+    clearTimeout(sundaySaveTimeout);
+    if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '<span>⏳</span> Saving...';
+    sundaySaveTimeout = setTimeout(() => executeSundaySave(), 300);
+  }
+
+  async function executeSundaySave() {
+    if (!activeSundayDateStr) return;
+    const attended = Boolean(el.sundayAttendanceToggle && el.sundayAttendanceToggle.checked);
+    const title = el.sundayTitleInput ? el.sundayTitleInput.value.trim() : '';
+    const speaker = el.sundaySpeakerInput ? el.sundaySpeakerInput.value.trim() : '';
+    const notes = el.sundayNotesInput ? el.sundayNotesInput.value.trim() : '';
+    const tags = state.sundayTags || [];
+
+    const hasContent = Boolean(attended || title || speaker || notes || tags.length);
+
+    if (!hasContent) {
+      await window.devotionStore.deleteSundayService(activeSundayDateStr);
+      if (el.btnDeleteSundayModal) el.btnDeleteSundayModal.style.display = 'none';
+      if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '';
+    } else {
+      await window.devotionStore.saveSundayService(activeSundayDateStr, {
+        attended,
+        title,
+        speaker,
+        notes,
+        tags
+      });
+      if (el.btnDeleteSundayModal) el.btnDeleteSundayModal.style.display = 'inline-flex';
+      if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '<span>✓</span> Auto-saved';
+    }
+
+    await updateHomeSundayCard();
+    if (state.activeView === 'calendar') renderCalendar();
+    if (state.activeView === 'journal') renderJournal();
+  }
+
+  function closeSundayModal() {
+    clearTimeout(sundaySaveTimeout);
+    executeSundaySave();
+    if (el.modalSundayService) {
+      el.modalSundayService.classList.remove('active');
+    }
+    activeSundayDateStr = null;
   }
 
   function openJournalSheet() {
@@ -755,6 +1057,13 @@
       el.cardNavSettings.addEventListener('click', () => switchView('settings'));
     }
 
+    // Home Sunday Church Service Action Button
+    if (el.btnHomeSundayAction) {
+      el.btnHomeSundayAction.addEventListener('click', () => {
+        openSundayModal(getDayDateStr(state.simulatedTodayDay));
+      });
+    }
+
     // Devotion View Controls
     el.btnPrevDay.addEventListener('click', () => {
       if (state.currentDay > 1) {
@@ -785,6 +1094,21 @@
         inp.addEventListener('input', () => triggerNotesSave(true));
       }
     });
+
+    // Devotion Tags Events
+    if (el.btnAddDevotionTag) {
+      el.btnAddDevotionTag.addEventListener('click', () => {
+        if (el.devotionTagInput) addDevotionTag(el.devotionTagInput.value);
+      });
+    }
+    if (el.devotionTagInput) {
+      el.devotionTagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          addDevotionTag(el.devotionTagInput.value);
+        }
+      });
+    }
 
     // Floating Journal Sheet triggers (Mobile Portrait)
     if (el.btnFloatingNotepad) {
@@ -832,27 +1156,107 @@
     el.btnMarkComplete.addEventListener('click', handleMarkComplete);
     el.btnUnmarkComplete.addEventListener('click', handleUnmarkComplete);
 
-    // Journal view controls
-    el.btnToggleEntries.addEventListener('click', () => {
-      state.journalTab = 'entries';
-      el.btnToggleEntries.classList.add('active');
-      el.btnToggleGallery.classList.remove('active');
-      el.journalEntriesTab.style.display = 'block';
-      el.journalGalleryTab.style.display = 'none';
-      renderJournal();
+    // Journal View Category Controls
+    const journalCategoryBtns = [
+      { btn: el.btnJournalCatAll, cat: 'all' },
+      { btn: el.btnJournalCatDevotions, cat: 'devotions' },
+      { btn: el.btnJournalCatSunday, cat: 'sunday' },
+      { btn: el.btnJournalCatGallery, cat: 'gallery' }
+    ];
+
+    journalCategoryBtns.forEach(({ btn, cat }) => {
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        state.journalCategory = cat;
+        state.journalTab = (cat === 'gallery') ? 'gallery' : 'entries';
+        journalCategoryBtns.forEach(c => {
+          if (c.btn) c.btn.classList.toggle('active', c.cat === cat);
+        });
+        state.selectedTagFilter = null;
+        renderJournal();
+      });
     });
-    el.btnToggleGallery.addEventListener('click', () => {
-      state.journalTab = 'gallery';
-      el.btnToggleGallery.classList.add('active');
-      el.btnToggleEntries.classList.remove('active');
-      el.journalEntriesTab.style.display = 'none';
-      el.journalGalleryTab.style.display = 'block';
-      renderJournal();
-    });
+
+    if (el.btnToggleEntries) {
+      el.btnToggleEntries.addEventListener('click', () => {
+        state.journalCategory = 'all';
+        state.journalTab = 'entries';
+        renderJournal();
+      });
+    }
+    if (el.btnToggleGallery) {
+      el.btnToggleGallery.addEventListener('click', () => {
+        state.journalCategory = 'gallery';
+        state.journalTab = 'gallery';
+        renderJournal();
+      });
+    }
     el.journalMonthSelect.addEventListener('change', (e) => {
       state.selectedJournalMonth = e.target.value;
       renderJournal();
     });
+
+    // Sunday Church Service Modal Controls
+    if (el.btnCloseSundayModal) {
+      el.btnCloseSundayModal.addEventListener('click', closeSundayModal);
+    }
+    if (el.btnDoneSundayModal) {
+      el.btnDoneSundayModal.addEventListener('click', closeSundayModal);
+    }
+    if (el.modalSundayService) {
+      el.modalSundayService.addEventListener('click', (e) => {
+        if (e.target === el.modalSundayService) {
+          closeSundayModal();
+        }
+      });
+    }
+
+    if (el.sundayAttendanceToggle) {
+      el.sundayAttendanceToggle.addEventListener('change', () => {
+        if (el.sundayAttendanceCard) {
+          el.sundayAttendanceCard.classList.toggle('attended', el.sundayAttendanceToggle.checked);
+        }
+        triggerSundaySave();
+      });
+    }
+
+    if (el.sundayTitleInput) el.sundayTitleInput.addEventListener('input', triggerSundaySave);
+    if (el.sundaySpeakerInput) el.sundaySpeakerInput.addEventListener('input', triggerSundaySave);
+    if (el.sundayNotesInput) el.sundayNotesInput.addEventListener('input', triggerSundaySave);
+
+    if (el.btnAddSundayTag) {
+      el.btnAddSundayTag.addEventListener('click', () => {
+        if (el.sundayTagInput) addSundayTag(el.sundayTagInput.value);
+      });
+    }
+    if (el.sundayTagInput) {
+      el.sundayTagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          addSundayTag(el.sundayTagInput.value);
+        }
+      });
+    }
+
+    if (el.btnDeleteSundayModal) {
+      el.btnDeleteSundayModal.addEventListener('click', () => {
+        showConfirmModal(
+          'Delete Sunday Service Entry',
+          'Are you sure you want to delete this Sunday service entry and attendance record?',
+          '🗑️',
+          async () => {
+            if (activeSundayDateStr) {
+              await window.devotionStore.deleteSundayService(activeSundayDateStr);
+              closeConfirmModal();
+              closeSundayModal();
+              showToast('Sunday service entry deleted 🗑️');
+            }
+          },
+          'Yes, Delete Entry',
+          true
+        );
+      });
+    }
 
     // Settings inputs
     el.settingAlarmToggle.addEventListener('change', saveAlarmSettings);
@@ -1351,7 +1755,9 @@
     // Global keyboard Escape key to close modals
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (el.modalJournalEntry && el.modalJournalEntry.classList.contains('active')) {
+        if (el.modalSundayService && el.modalSundayService.classList.contains('active')) {
+          closeSundayModal();
+        } else if (el.modalJournalEntry && el.modalJournalEntry.classList.contains('active')) {
           closeJournalEntryModal();
         } else if (el.modalLightbox && el.modalLightbox.classList.contains('active')) {
           closeLightbox();
@@ -1541,6 +1947,9 @@
 
     // Calculate Stats
     await updateStatsDashboard();
+
+    // Update Sunday Church Service Card
+    await updateHomeSundayCard();
   }
 
   // --- Completion & Streak Helpers ---
@@ -1673,6 +2082,14 @@
     if (el.btnToggleSoapDevotion) {
       el.btnToggleSoapDevotion.disabled = isLocked;
     }
+
+    if (el.devotionTagInput) {
+      el.devotionTagInput.disabled = isLocked;
+    }
+    if (el.btnAddDevotionTag) {
+      el.btnAddDevotionTag.disabled = isLocked;
+    }
+    renderDevotionTagsUI();
   }
 
   // --- View 2: Devotion Reader ---
@@ -1769,7 +2186,9 @@
 
     // Load Saved Notes & Image for this day
     applySoapModeUI();
-    const savedNote = await window.devotionStore.getNote(dateStr);
+    const noteRec = await window.devotionStore.getNoteRecord(dateStr);
+    state.devotionTags = (noteRec && Array.isArray(noteRec.tags)) ? [...noteRec.tags] : [];
+    const savedNote = noteRec ? noteRec.note : '';
     const daySchedForNote = window.bibleService.getDaySchedule(dayNum);
     const defaultScripture = daySchedForNote ? daySchedForNote.scriptures : '';
     const parsedNote = parseNoteData(savedNote, defaultScripture);
@@ -2222,6 +2641,23 @@
       }
     });
 
+    // Update Sunday service attendance indicators
+    const allSundayServices = await window.devotionStore.getAllSundayServices();
+    const sundayMap = new Map((allSundayServices || []).map(s => [s.date, s]));
+    cellMap.forEach((cell, dayNum) => {
+      const dStr = `2026-11-${String(dayNum).padStart(2, '0')}`;
+      const sunRec = sundayMap.get(dStr);
+      if (sunRec && sunRec.attended) {
+        if (!cell.querySelector('.cal-church-dot')) {
+          const churchDot = document.createElement('span');
+          churchDot.className = 'cal-church-dot';
+          churchDot.title = `Attended Sunday Church Service on Nov ${dayNum}`;
+          churchDot.textContent = '⛪';
+          cell.appendChild(churchDot);
+        }
+      }
+    });
+
     updateStatsDashboard();
   }
 
@@ -2240,151 +2676,320 @@
 
   async function renderJournal() {
     const selectedMonth = state.selectedJournalMonth; // e.g. "2026-11" or "all"
+    const activeCategory = state.journalCategory || 'all';
+
+    // If gallery category selected:
+    if (activeCategory === 'gallery') {
+      if (el.journalEntriesTab) el.journalEntriesTab.style.display = 'none';
+      if (el.journalGalleryTab) el.journalGalleryTab.style.display = 'block';
+      if (el.journalTagsBarWrap) el.journalTagsBarWrap.style.display = 'none';
+      const allImages = await window.devotionStore.getAllImages();
+      const allNotes = await window.devotionStore.getAllNotes();
+      const imagesMap = new Map(allImages.map(img => [img.date, img]));
+      const notesMap = new Map(allNotes.map(n => [n.date, n.note]));
+      renderJournalGallery(selectedMonth, imagesMap, notesMap, allImages);
+      return;
+    }
+
+    // Otherwise entries tab is visible
+    if (el.journalEntriesTab) el.journalEntriesTab.style.display = 'block';
+    if (el.journalGalleryTab) el.journalGalleryTab.style.display = 'none';
 
     const allNotes = await window.devotionStore.getAllNotes();
     const allImages = await window.devotionStore.getAllImages();
     const allCompletions = await window.devotionStore.getAllCompletions();
+    const allSundayServices = await window.devotionStore.getAllSundayServices();
+
+    renderJournalEntriesList(selectedMonth, activeCategory, allNotes, allImages, allCompletions, allSundayServices);
+  }
+
+  function renderJournalEntriesList(monthStr, category, allNotes, allImages, allCompletions, allSundayServices) {
+    el.journalEntriesList.innerHTML = '';
 
     // Map by date
-    const notesMap = new Map(allNotes.map(n => [n.date, n.note]));
+    const notesMap = new Map(allNotes.map(n => [n.date, n]));
     const imagesMap = new Map(allImages.map(img => [img.date, img]));
     const completionsMap = new Map(allCompletions.map(c => [c.date, c]));
 
-    if (state.journalTab === 'entries') {
-      renderJournalEntriesList(selectedMonth, notesMap, imagesMap, completionsMap, allNotes, allImages);
-    } else {
-      renderJournalGallery(selectedMonth, imagesMap, notesMap, allImages);
-    }
-  }
+    const candidateEntries = [];
 
-  function renderJournalEntriesList(monthStr, notesMap, imagesMap, completionsMap, allNotes, allImages) {
-    el.journalEntriesList.innerHTML = '';
-
-    // Collect all candidate dates
-    const dateSet = new Set();
-    if (monthStr === 'all') {
-      allNotes.forEach(n => dateSet.add(n.date));
-      allImages.forEach(img => dateSet.add(img.date));
-    } else {
-      // Days of selected month
-      const [yStr, mStr] = monthStr.split('-');
-      const y = parseInt(yStr, 10);
-      const m = parseInt(mStr, 10);
-      const daysInMonth = (m === 2) ? 28 : (([4, 6, 9, 11].includes(m)) ? 30 : 31);
-      for (let d = 1; d <= daysInMonth; d++) {
-        dateSet.add(`${monthStr}-${String(d).padStart(2, '0')}`);
-      }
-      // Also add any stored note/image starting with this month prefix
-      allNotes.forEach(n => { if (n.date && n.date.startsWith(monthStr)) dateSet.add(n.date); });
-      allImages.forEach(img => { if (img.date && img.date.startsWith(monthStr)) dateSet.add(img.date); });
-    }
-
-    const entries = [];
-    dateSet.forEach(dStr => {
-      const { day, dateObj } = parseDateParts(dStr);
-      const note = notesMap.get(dStr);
-      const img = imagesMap.get(dStr);
-      const comp = completionsMap.get(dStr);
-      const sched = window.bibleService.getDaySchedule(day);
-
-      // Check if note has actual content (ignore auto-filled Scripture-only notes)
-      let hasValidNote = false;
-      let parsedNote = null;
-      if (note && note.trim()) {
-        parsedNote = parseNoteData(note, sched ? sched.scriptures : '');
-        if (parsedNote.format === 'soap') {
-          hasValidNote = Boolean(
-            (parsedNote.observation && parsedNote.observation.trim()) ||
-            (parsedNote.application && parsedNote.application.trim()) ||
-            (parsedNote.prayer && parsedNote.prayer.trim())
-          );
-        } else {
-          hasValidNote = Boolean(parsedNote.text && parsedNote.text.trim());
+    // 1. Devotion Entries
+    if (category === 'all' || category === 'devotions') {
+      const dateSet = new Set();
+      if (monthStr === 'all') {
+        allNotes.forEach(n => dateSet.add(n.date));
+        allImages.forEach(img => dateSet.add(img.date));
+      } else {
+        const [yStr, mStr] = monthStr.split('-');
+        const y = parseInt(yStr, 10);
+        const m = parseInt(mStr, 10);
+        const daysInMonth = (m === 2) ? 28 : (([4, 6, 9, 11].includes(m)) ? 30 : 31);
+        for (let d = 1; d <= daysInMonth; d++) {
+          dateSet.add(`${monthStr}-${String(d).padStart(2, '0')}`);
         }
+        allNotes.forEach(n => { if (n.date && n.date.startsWith(monthStr)) dateSet.add(n.date); });
+        allImages.forEach(img => { if (img.date && img.date.startsWith(monthStr)) dateSet.add(img.date); });
       }
 
-      if (hasValidNote || img) {
-        entries.push({ day, dateStr: dStr, dateObj, note: hasValidNote ? note : null, parsedNote, img, comp, sched });
+      dateSet.forEach(dStr => {
+        const { day, dateObj } = parseDateParts(dStr);
+        const noteRec = notesMap.get(dStr);
+        const note = noteRec ? noteRec.note : null;
+        const tags = (noteRec && Array.isArray(noteRec.tags)) ? noteRec.tags : [];
+        const img = imagesMap.get(dStr);
+        const comp = completionsMap.get(dStr);
+        const sched = window.bibleService.getDaySchedule(day);
+
+        let hasValidNote = false;
+        let parsedNote = null;
+        if (note && note.trim()) {
+          parsedNote = parseNoteData(note, sched ? sched.scriptures : '');
+          if (parsedNote.format === 'soap') {
+            hasValidNote = Boolean(
+              (parsedNote.observation && parsedNote.observation.trim()) ||
+              (parsedNote.application && parsedNote.application.trim()) ||
+              (parsedNote.prayer && parsedNote.prayer.trim())
+            );
+          } else {
+            hasValidNote = Boolean(parsedNote.text && parsedNote.text.trim());
+          }
+        }
+
+        if (hasValidNote || img || tags.length > 0) {
+          candidateEntries.push({
+            type: 'devotion',
+            day,
+            dateStr: dStr,
+            dateObj,
+            note: hasValidNote ? note : null,
+            parsedNote,
+            tags,
+            img,
+            comp,
+            sched
+          });
+        }
+      });
+    }
+
+    // 2. Sunday Service Entries
+    if (category === 'all' || category === 'sunday') {
+      (allSundayServices || []).forEach(s => {
+        if (!s || !s.date) return;
+        if (monthStr !== 'all' && !s.date.startsWith(monthStr)) return;
+
+        const hasContent = Boolean(s.attended || s.title || s.speaker || s.notes || (s.tags && s.tags.length));
+        if (hasContent) {
+          const { day, dateObj } = parseDateParts(s.date);
+          candidateEntries.push({
+            type: 'sunday',
+            day,
+            dateStr: s.date,
+            dateObj,
+            attended: Boolean(s.attended),
+            title: s.title || '',
+            speaker: s.speaker || '',
+            notes: s.notes || '',
+            tags: Array.isArray(s.tags) ? s.tags : [],
+            serviceRecord: s
+          });
+        }
+      });
+    }
+
+    // --- Tag Aggregation & Filter Bar ---
+    const tagCountMap = new Map();
+    candidateEntries.forEach(item => {
+      if (item.tags && item.tags.length) {
+        item.tags.forEach(t => {
+          const clean = t.trim().toLowerCase();
+          if (clean) {
+            tagCountMap.set(clean, (tagCountMap.get(clean) || 0) + 1);
+          }
+        });
       }
     });
 
-    if (entries.length === 0) {
+    if (tagCountMap.size === 0 || !el.journalTagsBarWrap || !el.journalTagsBar) {
+      if (el.journalTagsBarWrap) el.journalTagsBarWrap.style.display = 'none';
+      state.selectedTagFilter = null;
+    } else {
+      el.journalTagsBarWrap.style.display = 'flex';
+      el.journalTagsBar.innerHTML = '';
+
+      // All Tags Pill
+      const allPill = document.createElement('button');
+      allPill.type = 'button';
+      allPill.className = `journal-tag-filter-pill ${!state.selectedTagFilter ? 'active' : ''}`;
+      allPill.innerHTML = `<span>All Tags</span> <span class="journal-tag-filter-count">${candidateEntries.length}</span>`;
+      allPill.addEventListener('click', () => {
+        state.selectedTagFilter = null;
+        renderJournal();
+      });
+      el.journalTagsBar.appendChild(allPill);
+
+      // Sorted Tag Pills
+      const sortedTags = Array.from(tagCountMap.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      sortedTags.forEach(([tag, count]) => {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        const isActive = (state.selectedTagFilter === tag);
+        pill.className = `journal-tag-filter-pill ${isActive ? 'active' : ''}`;
+        pill.innerHTML = `<span>#${escapeHtml(tag)}</span> <span class="journal-tag-filter-count">${count}</span>`;
+        pill.addEventListener('click', () => {
+          state.selectedTagFilter = isActive ? null : tag;
+          renderJournal();
+        });
+        el.journalTagsBar.appendChild(pill);
+      });
+    }
+
+    // Filter by active tag if selected
+    let entriesToRender = candidateEntries;
+    if (state.selectedTagFilter) {
+      entriesToRender = candidateEntries.filter(item => 
+        item.tags && item.tags.some(t => t.trim().toLowerCase() === state.selectedTagFilter)
+      );
+    }
+
+    if (entriesToRender.length === 0) {
+      let emptyMsg = `No journal entries found ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.`;
+      if (state.selectedTagFilter) {
+        emptyMsg = `No entries found matching tag #${state.selectedTagFilter}.`;
+      } else if (category === 'sunday') {
+        emptyMsg = `No Sunday church service notes found ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.`;
+      } else if (category === 'devotions') {
+        emptyMsg = `No daily devotion notes found ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.`;
+      }
+
       el.journalEntriesList.innerHTML = `
         <div class="empty-state-box" style="grid-column: 1 / -1;">
-          <div class="empty-state-icon">✍️</div>
-          <p>No journal entries found ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.</p>
-          <p style="font-size: 0.8rem; margin-top: 6px;">Start reading today's devotion to write notes and attach photos!</p>
+          <div class="empty-state-icon">${category === 'sunday' ? '⛪' : '✍️'}</div>
+          <p>${escapeHtml(emptyMsg)}</p>
+          <p style="font-size: 0.8rem; margin-top: 6px;">
+            ${category === 'sunday' ? 'Record sermon notes & mark attendance on Sundays!' : 'Start reading today’s devotion to write notes and attach photos!'}
+          </p>
         </div>
       `;
       return;
     }
 
     // Sort descending by dateStr
-    entries.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+    entriesToRender.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 
-    entries.forEach(item => {
+    entriesToRender.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'journal-entry-card';
 
-      const dateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const scriptureTitle = item.sched ? item.sched.scriptures : 'Daily Devotion';
+      if (item.type === 'sunday') {
+        // Sunday Service Entry Card
+        card.className = 'journal-entry-card sunday-service-entry';
+        const dateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
-      let cardHtml = `
-        <div class="entry-card-top">
-          <span class="entry-date-badge">📅 ${dateText} • Day ${item.day}</span>
-          ${item.comp ? '<span class="stat-tag green">✓ Completed</span>' : '<span class="stat-tag">Incomplete</span>'}
-        </div>
-        <div class="entry-scriptures-title">${escapeHtml(scriptureTitle)}</div>
-      `;
+        let cardHtml = `
+          <div class="entry-card-top">
+            <span class="entry-date-badge">⛪ ${dateText}</span>
+            ${item.attended ? '<span class="sunday-attendance-pill">✓ Attended</span>' : '<span class="stat-tag">Notes Only</span>'}
+          </div>
+          <div class="entry-scriptures-title">${escapeHtml(item.title || 'Sunday Church Service')}</div>
+        `;
 
-      if (item.parsedNote) {
-        if (item.parsedNote.format === 'soap') {
+        if (item.speaker) {
+          cardHtml += `<div class="sunday-card-speaker">👤 Speaker: ${escapeHtml(item.speaker)}</div>`;
+        }
+
+        if (item.notes) {
+          cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.notes.trim())}”</div>`;
+        }
+
+        if (item.tags && item.tags.length) {
           cardHtml += `
-            <div class="soap-entry-card-content">
-              <div class="soap-tag-pill">S.O.A.P. Journal Reflection</div>
-              ${item.parsedNote.observation ? `
-              <div class="soap-preview-row">
-                <span class="soap-preview-badge soap-letter-o">O</span>
-                <div class="soap-preview-body"><strong>Observation:</strong> ${escapeHtml(item.parsedNote.observation)}</div>
-              </div>` : ''}
-              ${item.parsedNote.application ? `
-              <div class="soap-preview-row">
-                <span class="soap-preview-badge soap-letter-a">A</span>
-                <div class="soap-preview-body"><strong>Application:</strong> ${escapeHtml(item.parsedNote.application)}</div>
-              </div>` : ''}
-              ${item.parsedNote.prayer ? `
-              <div class="soap-preview-row">
-                <span class="soap-preview-badge soap-letter-p">P</span>
-                <div class="soap-preview-body"><strong>Prayer:</strong> ${escapeHtml(item.parsedNote.prayer)}</div>
-              </div>` : ''}
+            <div class="card-tags-row">
+              ${item.tags.map(t => `<span class="card-tag-pill">#${escapeHtml(t)}</span>`).join('')}
             </div>
           `;
-        } else {
-          cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.parsedNote.text.trim())}”</div>`;
         }
-      }
 
-      if (item.img && item.img.dataUrl) {
         cardHtml += `
-          <div style="position: relative;">
-            <img src="${item.img.dataUrl}" alt="Devotion photo" class="entry-thumbnail">
-            <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 Attached</span>
+          <div class="entry-card-footer">
+            <span class="entry-card-action-hint">Open service notes ↗</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Sunday Service</span>
           </div>
         `;
+
+        card.innerHTML = cardHtml;
+        card.addEventListener('click', () => {
+          openSundayModal(item.dateStr);
+        });
+      } else {
+        // Daily Devotion Entry Card
+        card.className = 'journal-entry-card';
+        const dateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const scriptureTitle = item.sched ? item.sched.scriptures : 'Daily Devotion';
+
+        let cardHtml = `
+          <div class="entry-card-top">
+            <span class="entry-date-badge">📅 ${dateText} • Day ${item.day}</span>
+            ${item.comp ? '<span class="stat-tag green">✓ Completed</span>' : '<span class="stat-tag">Incomplete</span>'}
+          </div>
+          <div class="entry-scriptures-title">${escapeHtml(scriptureTitle)}</div>
+        `;
+
+        if (item.parsedNote) {
+          if (item.parsedNote.format === 'soap') {
+            cardHtml += `
+              <div class="soap-entry-card-content">
+                <div class="soap-tag-pill">S.O.A.P. Journal Reflection</div>
+                ${item.parsedNote.observation ? `
+                <div class="soap-preview-row">
+                  <span class="soap-preview-badge soap-letter-o">O</span>
+                  <div class="soap-preview-body"><strong>Observation:</strong> ${escapeHtml(item.parsedNote.observation)}</div>
+                </div>` : ''}
+                ${item.parsedNote.application ? `
+                <div class="soap-preview-row">
+                  <span class="soap-preview-badge soap-letter-a">A</span>
+                  <div class="soap-preview-body"><strong>Application:</strong> ${escapeHtml(item.parsedNote.application)}</div>
+                </div>` : ''}
+                ${item.parsedNote.prayer ? `
+                <div class="soap-preview-row">
+                  <span class="soap-preview-badge soap-letter-p">P</span>
+                  <div class="soap-preview-body"><strong>Prayer:</strong> ${escapeHtml(item.parsedNote.prayer)}</div>
+                </div>` : ''}
+              </div>
+            `;
+          } else {
+            cardHtml += `<div class="entry-note-preview">“${escapeHtml(item.parsedNote.text.trim())}”</div>`;
+          }
+        }
+
+        if (item.tags && item.tags.length) {
+          cardHtml += `
+            <div class="card-tags-row">
+              ${item.tags.map(t => `<span class="card-tag-pill">#${escapeHtml(t)}</span>`).join('')}
+            </div>
+          `;
+        }
+
+        if (item.img && item.img.dataUrl) {
+          cardHtml += `
+            <div style="position: relative;">
+              <img src="${item.img.dataUrl}" alt="Devotion photo" class="entry-thumbnail">
+              <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 Attached</span>
+            </div>
+          `;
+        }
+
+        cardHtml += `
+          <div class="entry-card-footer">
+            <span class="entry-card-action-hint">Open full entry ↗</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">${item.parsedNote ? (item.parsedNote.format === 'soap' ? 'S.O.A.P.' : 'Reflection') : 'Photo'}</span>
+          </div>
+        `;
+
+        card.innerHTML = cardHtml;
+        card.addEventListener('click', () => {
+          openJournalEntryPanel(item);
+        });
       }
-
-      cardHtml += `
-        <div class="entry-card-footer">
-          <span class="entry-card-action-hint">Open full entry ↗</span>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">${item.parsedNote ? (item.parsedNote.format === 'soap' ? 'S.O.A.P.' : 'Reflection') : 'Photo'}</span>
-        </div>
-      `;
-
-      card.innerHTML = cardHtml;
-
-      card.addEventListener('click', () => {
-        openJournalEntryPanel(item);
-      });
 
       el.journalEntriesList.appendChild(card);
     });
@@ -2504,6 +3109,17 @@
         <div class="panel-attached-photo-wrap">
           <div class="soap-section-badge">📷 Attached Devotional Photo</div>
           <img src="${item.img.dataUrl}" alt="Devotion photo" class="panel-attached-img" id="panel-attached-img" title="Click to inspect full photo">
+        </div>
+      `;
+    }
+
+    if (item.tags && item.tags.length) {
+      bodyHtml += `
+        <div style="margin: 14px 0 6px 0;">
+          <div class="soap-section-badge">🏷️ Tags &amp; Themes</div>
+          <div class="card-tags-row">
+            ${item.tags.map(t => `<span class="card-tag-pill">#${escapeHtml(t)}</span>`).join('')}
+          </div>
         </div>
       `;
     }
@@ -3038,5 +3654,17 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
+  // Expose for testing & deep-linking
+  window.switchView = switchView;
+  window.openSundayModal = openSundayModal;
+  window.closeSundayModal = closeSundayModal;
+  window.renderDevotion = renderDevotion;
+  window.renderJournal = renderJournal;
+  window.renderCalendar = renderCalendar;
+  window.renderHome = renderHome;
+  window.setTheme = setTheme;
+  window.getDayDateStr = getDayDateStr;
+  window.appState = state;
 
 })();

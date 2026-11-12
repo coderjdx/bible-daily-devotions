@@ -126,6 +126,20 @@
                 <span id="hero-action-icon">📖</span>
                 <span id="hero-action-text">Start Today’s Devotion</span>
               </button>
+
+              <!-- Sunday Church Service Card (Active on Sundays) -->
+              <div class="sunday-home-card" id="home-sunday-card" style="display: none;">
+                <div class="sunday-home-top">
+                  <div class="sunday-home-badge"><span>⛪</span> Sunday Service</div>
+                  <div class="sunday-attendance-pill" id="home-sunday-attendance-pill" style="display: none;">✓ Attended</div>
+                </div>
+                <h3 class="sunday-home-title" id="home-sunday-title">Sunday Church Service</h3>
+                <p class="sunday-home-desc" id="home-sunday-desc">Mark your attendance and record sermon notes &amp; takeaways for today.</p>
+                <button class="btn-sunday-home-action" id="btn-home-sunday-action">
+                  <span id="home-sunday-action-icon">✍️</span>
+                  <span id="home-sunday-action-text">Record Sunday Service Notes</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -374,6 +388,25 @@
                 </div>
               </div>
 
+              <!-- Devotion Tags Section -->
+              <div class="devotion-tags-section" id="devotion-tags-section">
+                <div class="devotion-tags-header">
+                  <div class="devotion-tags-title">
+                    <span>🏷️</span> Tags & Themes
+                  </div>
+                  <span class="tags-hint">Categorize this entry</span>
+                </div>
+                <div class="tags-chips-container" id="devotion-tags-chips">
+                  <!-- Tag chips dynamically rendered -->
+                </div>
+                <div class="tags-input-row">
+                  <span class="tags-input-hash">#</span>
+                  <input type="text" class="tags-input-field" id="devotion-tag-input" placeholder="Add tag (e.g. faith, peace, healing)..." maxlength="30" autocomplete="off">
+                  <button type="button" class="btn-add-tag" id="btn-add-devotion-tag" title="Add Tag">Add</button>
+                </div>
+                <div class="tag-suggestions" id="devotion-tag-suggestions" style="display: none;"></div>
+              </div>
+
               <!-- Image Upload for Today (Requirement 11) -->
               <div class="devotion-image-box">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -529,9 +562,19 @@
             <option value="2026-10">October 2026</option>
             <option value="2026-09">September 2026</option>
           </select>
-          <div class="journal-view-toggle">
-            <button class="view-toggle-btn active" id="btn-toggle-entries">📖 Journal Catalog</button>
-            <button class="view-toggle-btn" id="btn-toggle-gallery">📷 Photo Gallery</button>
+          <div class="journal-view-toggle" id="journal-category-toggle">
+            <button class="view-toggle-btn active" id="btn-journal-cat-all" data-category="all">📚 All</button>
+            <button class="view-toggle-btn" id="btn-journal-cat-devotions" data-category="devotions">✍️ Devotions</button>
+            <button class="view-toggle-btn" id="btn-journal-cat-sunday" data-category="sunday">⛪ Sunday Service</button>
+            <button class="view-toggle-btn" id="btn-journal-cat-gallery" data-category="gallery">📷 Photos</button>
+          </div>
+        </div>
+
+        <!-- Tag Filter Bar (Horizontally scrollable pill bar) -->
+        <div class="journal-tags-bar-wrap" id="journal-tags-bar-wrap" style="display: none;">
+          <div class="journal-tags-bar-label">🏷️ Filter:</div>
+          <div class="journal-tags-bar" id="journal-tags-bar">
+            <!-- Dynamic tag filter pills (e.g., [All Tags], [#faith 4], [#gratitude 2]) -->
           </div>
         </div>
 
@@ -1066,6 +1109,94 @@
           </button>
           <button class="tool-btn btn-danger-action" id="btn-lightbox-delete" style="flex: 1; justify-content: center;">
             <span>🗑️</span> Delete Photo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sunday Church Service Sheet / Modal -->
+    <div class="modal-backdrop" id="modal-sunday-service">
+      <div class="modal-sheet sunday-service-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sunday-sheet-header">
+          <div class="sunday-sheet-header-left">
+            <span class="sunday-sheet-icon">⛪</span>
+            <div>
+              <div class="sunday-sheet-badge">Sunday Church Service</div>
+              <div class="sunday-sheet-date" id="sunday-modal-date">Sunday, Nov 8, 2026</div>
+            </div>
+          </div>
+          <div class="sunday-sheet-header-right">
+            <div class="notes-autosave-badge" id="sunday-save-badge">
+              <span>✓</span> Auto-saved
+            </div>
+            <button class="sheet-close-btn" id="btn-close-sunday-modal" title="Close Sunday Service">✕</button>
+          </div>
+        </div>
+
+        <div class="sunday-sheet-body">
+          <!-- Attendance Toggle Section -->
+          <div class="sunday-attendance-card" id="sunday-attendance-card">
+            <label class="sunday-attendance-label" for="sunday-attendance-toggle">
+              <input type="checkbox" id="sunday-attendance-toggle" class="sunday-attendance-checkbox">
+              <span class="sunday-checkbox-custom"></span>
+              <div class="sunday-attendance-text">
+                <span class="sunday-attendance-main">I attended Sunday Church Service today</span>
+                <span class="sunday-attendance-sub">Record your presence in worship and mark your calendar</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Sermon Title Field -->
+          <div class="sunday-field-group">
+            <label class="sunday-field-label" for="sunday-title-input">
+              <span>📖</span> Sermon Title / Theme
+            </label>
+            <input type="text" class="sunday-field-input" id="sunday-title-input" placeholder="e.g. Walking in the Spirit (Part 3)..." maxlength="120" autocomplete="off">
+          </div>
+
+          <!-- Speaker / Preacher Field -->
+          <div class="sunday-field-group">
+            <label class="sunday-field-label" for="sunday-speaker-input">
+              <span>👤</span> Speaker / Pastor
+            </label>
+            <input type="text" class="sunday-field-input" id="sunday-speaker-input" placeholder="e.g. Pastor John Doe, Guest Evangelist..." maxlength="80" autocomplete="off">
+          </div>
+
+          <!-- Sermon Notes Field -->
+          <div class="sunday-field-group">
+            <label class="sunday-field-label" for="sunday-notes-input">
+              <span>✍️</span> Sermon Notes &amp; Key Takeaways
+            </label>
+            <textarea class="sunday-notes-textarea" id="sunday-notes-input" rows="7" placeholder="Scripture verses referenced, main takeaways, personal revelations, and life applications..."></textarea>
+          </div>
+
+          <!-- Tags Section -->
+          <div class="sunday-tags-section">
+            <div class="devotion-tags-header">
+              <div class="devotion-tags-title">
+                <span>🏷️</span> Tags &amp; Topics
+              </div>
+              <span class="tags-hint">Categorize sermon (e.g. #series, #faith, #prayer)</span>
+            </div>
+            <div class="tags-chips-container" id="sunday-tags-chips">
+              <!-- Dynamically populated chips -->
+            </div>
+            <div class="tags-input-row">
+              <span class="tags-input-hash">#</span>
+              <input type="text" class="tags-input-field" id="sunday-tag-input" placeholder="Add tag (e.g. sermon-series, grace)..." maxlength="30" autocomplete="off">
+              <button type="button" class="btn-add-tag" id="btn-add-sunday-tag" title="Add Tag">Add</button>
+            </div>
+            <div class="tag-suggestions" id="sunday-tag-suggestions" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="sunday-sheet-actions">
+          <button class="btn-primary" id="btn-done-sunday-modal" style="flex: 1; justify-content: center;">
+            <span>✓</span> Done (Auto-Saved)
+          </button>
+          <button class="tool-btn btn-danger-action" id="btn-delete-sunday-modal" style="display: none;" title="Delete this Sunday Service entry">
+            <span>🗑️</span>
           </button>
         </div>
       </div>

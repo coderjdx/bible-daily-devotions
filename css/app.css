@@ -3842,3 +3842,705 @@ input:checked + .slider:before {
   }
 }
 
+/* ==========================================================================
+   SUNDAY CHURCH SERVICE & UNIFIED TAGGING SYSTEM (PHASE 1)
+   ========================================================================== */
+
+/* Sunday Card on Home View */
+.sunday-home-card {
+  margin-top: 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.sunday-home-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sunday-home-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.sunday-attendance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.sunday-home-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.sunday-home-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.btn-sunday-home-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent-gold);
+  color: #0b0f19;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.28);
+}
+
+.btn-sunday-home-action:hover {
+  background: var(--accent-gold-light);
+  transform: translateY(-1px);
+}
+
+/* Devotion & Sunday Tags Section */
+.devotion-tags-section,
+.sunday-tags-section {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.devotion-tags-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.devotion-tags-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tags-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.tags-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+  margin-bottom: 8px;
+}
+
+.tags-chips-container:empty {
+  display: none;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--accent-gold-light);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.tag-chip-del {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tag-chip-del:hover {
+  color: var(--accent-red);
+}
+
+.tags-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+}
+
+.tags-input-hash {
+  color: var(--accent-gold);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.tags-input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  padding: 4px 0;
+}
+
+.tags-input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-add-tag {
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  color: var(--accent-gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-add-tag:hover {
+  background: var(--accent-gold);
+  color: #0b0f19;
+  border-color: var(--accent-gold);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.tag-suggestion-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.tag-suggestion-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-full);
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tag-suggestion-pill:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Journal View Category & Tag Filter Bar */
+.journal-category-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.journal-category-toggle::-webkit-scrollbar {
+  display: none;
+}
+
+.journal-tags-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 14px 0;
+  padding: 4px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.journal-tags-bar-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.journal-tags-bar-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.journal-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.journal-tag-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.journal-tag-filter-pill:hover {
+  border-color: var(--accent-gold);
+  color: var(--text-primary);
+}
+
+.journal-tag-filter-pill.active {
+  background: var(--accent-gold);
+  color: #0b0f19;
+  border-color: var(--accent-gold);
+  font-weight: 700;
+}
+
+.journal-tag-filter-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.journal-tag-filter-pill.active .journal-tag-filter-count {
+  background: rgba(0, 0, 0, 0.25);
+  color: #0b0f19;
+}
+
+/* Card Tag Pills (displayed on Journal list cards) */
+.card-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0 4px 0;
+}
+
+.card-tag-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent-gold-light);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+}
+
+/* Sunday Church Service Modal / Sheet */
+.sunday-service-sheet {
+  max-width: 520px;
+}
+
+.sunday-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sunday-sheet-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sunday-sheet-icon {
+  font-size: 1.8rem;
+}
+
+.sunday-sheet-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-gold);
+}
+
+.sunday-sheet-date {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.sunday-sheet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sunday-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sunday-attendance-card {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.sunday-attendance-card.attended {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
+.sunday-attendance-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sunday-attendance-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.sunday-checkbox-custom {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-medium);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sunday-attendance-checkbox:checked ~ .sunday-checkbox-custom {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.sunday-attendance-checkbox:checked ~ .sunday-checkbox-custom::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sunday-attendance-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sunday-attendance-main {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sunday-attendance-sub {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.sunday-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sunday-field-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sunday-field-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.sunday-field-input:focus {
+  border-color: var(--accent-gold);
+}
+
+.sunday-notes-textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.sunday-notes-textarea:focus {
+  border-color: var(--accent-gold);
+}
+
+.sunday-sheet-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Calendar Sunday Attendance Dot */
+.cal-church-dot {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* Sunday Service Card in Journal Catalog */
+.journal-entry-card.sunday-service-entry {
+  border-left: 4px solid var(--accent-gold);
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.05), var(--bg-card) 25%);
+}
+
+.sunday-card-speaker {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   LIGHT MODE OVERRIDES FOR SUNDAY & TAGGING SYSTEM
+   ========================================================================== */
+[data-theme="light"] .sunday-home-card {
+  background: linear-gradient(135deg, #fffbeb 0%, #f5f3ff 100%);
+  border-color: rgba(217, 119, 6, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .sunday-home-badge {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+[data-theme="light"] .sunday-attendance-pill {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: rgba(5, 150, 105, 0.35);
+}
+
+[data-theme="light"] .sunday-home-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .sunday-home-desc {
+  color: #475569;
+}
+
+[data-theme="light"] .btn-sunday-home-action {
+  background: #d97706;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.25);
+}
+
+[data-theme="light"] .btn-sunday-home-action:hover {
+  background: #b45309;
+}
+
+[data-theme="light"] .devotion-tags-section,
+[data-theme="light"] .sunday-tags-section {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .tag-chip {
+  background: #fef3c7;
+  border-color: rgba(217, 119, 6, 0.3);
+  color: #92400e;
+}
+
+[data-theme="light"] .tags-input-row {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .btn-add-tag {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #d97706;
+}
+
+[data-theme="light"] .btn-add-tag:hover {
+  background: #d97706;
+  color: #ffffff;
+}
+
+[data-theme="light"] .tag-suggestion-pill {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #475569;
+}
+
+[data-theme="light"] .tag-suggestion-pill:hover {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #d97706;
+}
+
+[data-theme="light"] .journal-tag-filter-pill {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #475569;
+}
+
+[data-theme="light"] .journal-tag-filter-pill:hover {
+  border-color: #d97706;
+  color: #0f172a;
+}
+
+[data-theme="light"] .journal-tag-filter-pill.active {
+  background: #d97706;
+  color: #ffffff;
+  border-color: #d97706;
+}
+
+[data-theme="light"] .journal-tag-filter-pill.active .journal-tag-filter-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+[data-theme="light"] .card-tag-pill {
+  background: #fef3c7;
+  border-color: rgba(217, 119, 6, 0.25);
+  color: #92400e;
+}
+
+[data-theme="light"] .sunday-attendance-card {
+  background: #ecfdf5;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+[data-theme="light"] .sunday-attendance-card.attended {
+  background: #d1fae5;
+  border-color: rgba(5, 150, 105, 0.5);
+}
+
+[data-theme="light"] .sunday-attendance-main {
+  color: #0f172a;
+}
+
+[data-theme="light"] .sunday-attendance-sub {
+  color: #475569;
+}
+
+[data-theme="light"] .sunday-checkbox-custom {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .sunday-field-input,
+[data-theme="light"] .sunday-notes-textarea {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+[data-theme="light"] .sunday-field-input:focus,
+[data-theme="light"] .sunday-notes-textarea:focus {
+  border-color: #d97706;
+}
+
+[data-theme="light"] .journal-entry-card.sunday-service-entry {
+  border-left-color: #d97706;
+  background: linear-gradient(to right, #fffbeb, #ffffff 30%);
+}
+
+
