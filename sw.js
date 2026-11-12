@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-devotions-v31';
+const CACHE_NAME = 'daily-devotions-v32';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -4766,16 +4766,36 @@
       const file = new File([blob], filename, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({
+          const shareData = {
             files: [file],
-            title: 'Daily Scripture Reading',
-            text: `${state.cardGen.verseText} — ${state.cardGen.reference}`
-          });
+            title: 'Daily Scripture Reading'
+          };
+          // Try with caption text first
+          try {
+            if (navigator.canShare({ files: [file], text: `${state.cardGen.verseText} — ${state.cardGen.reference}` })) {
+              shareData.text = `${state.cardGen.verseText} — ${state.cardGen.reference}`;
+            }
+          } catch {
+            // Some browsers throw if canShare takes text + files
+          }
+          await navigator.share(shareData);
           showToast('Card shared successfully! 📤');
           return;
         } catch (err) {
           if (err.name !== 'AbortError') {
-            console.warn('Share error:', err);
+            // Fallback retry with files only (for apps like Instagram that reject combined text/file payloads)
+            try {
+              await navigator.share({ files: [file] });
+              showToast('Card shared successfully! 📤');
+              return;
+            } catch (retryErr) {
+              if (retryErr.name !== 'AbortError') {
+                console.warn('Share error:', retryErr);
+              }
+            }
+          } else {
+            // User cancelled share dialog
+            return;
           }
         }
       }
