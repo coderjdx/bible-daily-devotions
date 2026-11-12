@@ -5011,6 +5011,7 @@
   window.renderCalendar = renderCalendar;
   window.renderHome = renderHome;
   window.setTheme = setTheme;
+  window.showToast = showToast;
   window.getDayDateStr = getDayDateStr;
   window.appState = state;
 

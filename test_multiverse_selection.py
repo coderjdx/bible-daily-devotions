@@ -57,9 +57,9 @@ def run_test():
         "mobile": True
     })
 
-    # Hard reload with ignoreCache
-    send("Page.reload", {"ignoreCache": True})
-    time.sleep(1.5)
+    # Navigate to Day 12 Devotion directly
+    send("Page.navigate", {"url": "http://localhost:8080/?day=12&view=devotion"})
+    time.sleep(2)
 
     print("Checking app readiness...")
     evaluate("""
@@ -69,7 +69,7 @@ def run_test():
             }
             window.switchView('devotion');
             window.setTheme('dark');
-            await window.renderDevotion(3);
+            await window.renderDevotion(12);
         })()
     """)
     time.sleep(1)

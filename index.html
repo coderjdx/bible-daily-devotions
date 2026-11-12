@@ -486,41 +486,48 @@
 
         <!-- Floating Verse Action Bar (In-Text Verse Highlighting) -->
         <div class="verse-action-bar" id="verse-action-bar" style="display: none;" role="toolbar" aria-label="Verse options">
-          <div class="verse-action-ref-box">
-            <span class="verse-action-ref" id="verse-action-ref-text">Verse</span>
-            <span class="verse-action-sub" id="verse-action-sub-text">Tap color to highlight</span>
-          </div>
-          <div class="verse-action-colors">
-            <button class="verse-color-btn color-gold" data-color="gold" title="Gold Highlight">
-              <span class="color-dot"></span>
-            </button>
-            <button class="verse-color-btn color-green" data-color="green" title="Emerald Highlight">
-              <span class="color-dot"></span>
-            </button>
-            <button class="verse-color-btn color-blue" data-color="blue" title="Sky Highlight">
-              <span class="color-dot"></span>
-            </button>
-            <button class="verse-color-btn color-purple" data-color="purple" title="Purple Highlight">
-              <span class="color-dot"></span>
-            </button>
-          </div>
-          <div class="verse-action-divider"></div>
-          <div class="verse-action-tools">
-            <button class="verse-tool-btn" id="btn-verse-create-card" title="Create Shareable Scripture Card">
-              <span class="tool-icon">🎨</span>
-              <span class="tool-label">Card</span>
-            </button>
-            <button class="verse-tool-btn" id="btn-verse-copy" title="Copy Verse">
-              <span class="tool-icon">📋</span>
-              <span class="tool-label">Copy</span>
-            </button>
-            <button class="verse-tool-btn" id="btn-verse-clear" title="Clear Highlight" style="display: none;">
-              <span class="tool-icon">🗑️</span>
-              <span class="tool-label">Clear</span>
-            </button>
-            <button class="verse-tool-btn verse-tool-close" id="btn-verse-close" title="Close Toolbar">
+          <!-- Header Row: Reference, Count & Close -->
+          <div class="verse-action-header">
+            <div class="verse-action-ref-box">
+              <span class="verse-action-ref" id="verse-action-ref-text">Verse</span>
+              <span class="verse-action-sub" id="verse-action-sub-text">Tap color to highlight</span>
+            </div>
+            <button class="verse-tool-btn verse-tool-close" id="btn-verse-close" title="Close Toolbar" aria-label="Close Toolbar">
               <span>✕</span>
             </button>
+          </div>
+
+          <!-- Actions Row: Colors & Tools -->
+          <div class="verse-action-body">
+            <div class="verse-action-colors">
+              <button class="verse-color-btn color-gold" data-color="gold" title="Gold Highlight">
+                <span class="color-dot"></span>
+              </button>
+              <button class="verse-color-btn color-green" data-color="green" title="Emerald Highlight">
+                <span class="color-dot"></span>
+              </button>
+              <button class="verse-color-btn color-blue" data-color="blue" title="Sky Highlight">
+                <span class="color-dot"></span>
+              </button>
+              <button class="verse-color-btn color-purple" data-color="purple" title="Purple Highlight">
+                <span class="color-dot"></span>
+              </button>
+            </div>
+            <div class="verse-action-divider"></div>
+            <div class="verse-action-tools">
+              <button class="verse-tool-btn" id="btn-verse-create-card" title="Create Shareable Scripture Card">
+                <span class="tool-icon">🎨</span>
+                <span class="tool-label">Card</span>
+              </button>
+              <button class="verse-tool-btn" id="btn-verse-copy" title="Copy Verse">
+                <span class="tool-icon">📋</span>
+                <span class="tool-label">Copy</span>
+              </button>
+              <button class="verse-tool-btn" id="btn-verse-clear" title="Clear Highlight" style="display: none;">
+                <span class="tool-icon">🗑️</span>
+                <span class="tool-label">Clear</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
