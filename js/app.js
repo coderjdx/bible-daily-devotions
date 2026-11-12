@@ -4650,7 +4650,7 @@
       }
 
       ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
-      let lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
+      let lines = getLines(ctx, rawText, maxTextWidth);
       let lineHeight = fontSize * 1.52;
       let totalTextHeight = lines.length * lineHeight;
 
@@ -4663,7 +4663,7 @@
       while (totalTextHeight > maxAvailableHeight && fontSize > 20) {
         fontSize -= 2;
         ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
-        lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
+        lines = getLines(ctx, rawText, maxTextWidth);
         lineHeight = fontSize * 1.52;
         totalTextHeight = lines.length * lineHeight;
       }
@@ -4769,7 +4769,7 @@
           await navigator.share({
             files: [file],
             title: 'Daily Scripture Reading',
-            text: `“${state.cardGen.verseText}” — ${state.cardGen.reference}`
+            text: `${state.cardGen.verseText} — ${state.cardGen.reference}`
           });
           showToast('Card shared successfully! 📤');
           return;
