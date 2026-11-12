@@ -4496,6 +4496,14 @@
     }
   }
 
+  const cardAppIcon = new Image();
+  cardAppIcon.src = './icons/icon-192.png';
+  cardAppIcon.onload = () => {
+    if (el.modalCardGenerator && el.modalCardGenerator.style.display !== 'none') {
+      drawScriptureCard();
+    }
+  };
+
   function drawScriptureCard() {
     const canvas = el.scriptureCardCanvas;
     if (!canvas) return;
@@ -4567,36 +4575,105 @@
       roundRect(ctx, margin, margin, width - margin * 2, height - margin * 2, 28);
       ctx.stroke();
 
-      // 3. Header Dove Icon
-      ctx.font = '54px "Apple Color Emoji", "Segoe UI Emoji", serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🕊️', width / 2, margin + 70);
+      // 3. Header Daily Devotions Icon (Middle Top)
+      const iconSize = 76;
+      const iconX = (width - iconSize) / 2;
+      const iconY = margin + 30;
+      const iconRadius = 18;
+
+      ctx.save();
+      // Drop shadow for the icon
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 4;
+
+      roundRect(ctx, iconX, iconY, iconSize, iconSize, iconRadius);
+      ctx.clip();
+
+      if (cardAppIcon.complete && cardAppIcon.naturalWidth > 0) {
+        ctx.drawImage(cardAppIcon, iconX, iconY, iconSize, iconSize);
+      } else {
+        // High-contrast fallback
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(iconX, iconY, iconSize, iconSize);
+        ctx.font = '36px "Apple Color Emoji", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📖', width / 2, iconY + iconSize / 2);
+      }
+      ctx.restore();
+
+      // Delicate accent border around the icon
+      ctx.save();
+      ctx.strokeStyle = (theme === 'dawn') ? 'rgba(255, 241, 242, 0.45)' : ((theme === 'garden') ? 'rgba(209, 250, 229, 0.45)' : 'rgba(245, 158, 11, 0.55)');
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, iconX, iconY, iconSize, iconSize, iconRadius);
+      ctx.stroke();
+      ctx.restore();
 
       // 4. Scripture Verse
       const textMargin = 110;
       const maxTextWidth = width - textMargin * 2;
       const rawText = (verseText || '').trim();
+      const charCount = rawText.length;
 
+      // Dynamic font size scaling: larger when fewer characters
       let fontSize = 42;
-      if (rawText.length > 340) fontSize = 24;
-      else if (rawText.length > 250) fontSize = 28;
-      else if (rawText.length > 140) fontSize = 34;
-      else if (rawText.length < 80) fontSize = 48;
+      if (charCount < 45) {
+        fontSize = 70;
+      } else if (charCount < 85) {
+        fontSize = 62;
+      } else if (charCount < 140) {
+        fontSize = 54;
+      } else if (charCount < 200) {
+        fontSize = 46;
+      } else if (charCount < 280) {
+        fontSize = 38;
+      } else if (charCount < 360) {
+        fontSize = 32;
+      } else if (charCount < 440) {
+        fontSize = 27;
+      } else {
+        fontSize = 23;
+      }
+
+      // Aspect ratio & reflection adjustments
+      if (aspect === 'square') {
+        fontSize = Math.round(fontSize * 0.88);
+      }
+      if (includeReflection && reflection && fontSize > 36) {
+        fontSize = Math.round(fontSize * 0.86);
+      }
 
       ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
+      let lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
+      let lineHeight = fontSize * 1.52;
+      let totalTextHeight = lines.length * lineHeight;
+
+      // Vertical space bounds
+      const topReserved = iconY + iconSize + 45; // below top icon
+      const bottomReserved = margin + (includeWatermark ? 65 : 25) + (includeReflection && reflection ? 180 : 85);
+      const maxAvailableHeight = height - topReserved - bottomReserved;
+
+      // Guardrail loop: If text exceeds available height, scale down font until it fits
+      while (totalTextHeight > maxAvailableHeight && fontSize > 20) {
+        fontSize -= 2;
+        ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
+        lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
+        lineHeight = fontSize * 1.52;
+        totalTextHeight = lines.length * lineHeight;
+      }
+
+      // Center verse content vertically within the available region
+      const availableCenterY = (topReserved + (height - bottomReserved)) / 2;
+      let startY = availableCenterY - (totalTextHeight / 2) - (includeReflection && reflection ? 30 : 10);
+      if (startY < topReserved) {
+        startY = topReserved;
+      }
+
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
       ctx.shadowBlur = 12;
-
-      const lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
-      const lineHeight = fontSize * 1.55;
-      const totalTextHeight = lines.length * lineHeight;
-
-      let startY = (height / 2) - (totalTextHeight / 2) - 40;
-      if (includeReflection && reflection) {
-        startY -= 80;
-      }
 
       lines.forEach((line, idx) => {
         ctx.fillText(line, width / 2, startY + (idx * lineHeight));
@@ -4605,15 +4682,16 @@
       ctx.shadowBlur = 0;
 
       // 5. Scripture Reference Badge
-      const refY = startY + totalTextHeight + 42;
-      ctx.font = 'bold 30px "Plus Jakarta Sans", -apple-system, sans-serif';
+      const refY = startY + totalTextHeight + (fontSize > 50 ? 46 : 38);
+      const refFontSize = (fontSize > 55) ? 34 : ((fontSize > 40) ? 30 : 26);
+      ctx.font = `bold ${refFontSize}px "Plus Jakarta Sans", -apple-system, sans-serif`;
       const goldColor = (theme === 'dawn') ? '#fde68a' : ((theme === 'garden') ? '#6ee7b7' : '#f59e0b');
       ctx.fillStyle = goldColor;
       ctx.fillText(reference || 'Scripture', width / 2, refY);
 
       // 6. Optional Reflection Snippet
       if (includeReflection && reflection) {
-        const divY = refY + 45;
+        const divY = refY + 38;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -4621,12 +4699,12 @@
         ctx.lineTo(width / 2 + 120, divY);
         ctx.stroke();
 
-        ctx.font = 'italic 25px "Plus Jakarta Sans", sans-serif';
+        ctx.font = 'italic 24px "Plus Jakarta Sans", sans-serif';
         ctx.fillStyle = '#cbd5e1';
         const refLines = getLines(ctx, `My Reflection: "${reflection.slice(0, 180)}${reflection.length > 180 ? '...' : ''}"`, maxTextWidth - 60);
-        const refLineHeight = 36;
+        const refLineHeight = 34;
         refLines.forEach((rLine, rIdx) => {
-          ctx.fillText(rLine, width / 2, divY + 38 + (rIdx * refLineHeight));
+          ctx.fillText(rLine, width / 2, divY + 34 + (rIdx * refLineHeight));
         });
       }
 
