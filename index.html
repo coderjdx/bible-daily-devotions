@@ -218,6 +218,17 @@
                 <span class="quick-arrow">›</span>
               </div>
 
+              <div class="quick-card" id="card-nav-monthly-summary">
+                <div class="quick-left">
+                  <div class="quick-icon-box">🏆</div>
+                  <div>
+                    <div class="quick-title">My Spiritual Walk with God</div>
+                    <div class="quick-desc">Monthly milestone infographic & achievements</div>
+                  </div>
+                </div>
+                <span class="quick-arrow">›</span>
+              </div>
+
               <div class="quick-card" id="card-nav-settings">
                 <div class="quick-left">
                   <div class="quick-icon-box">⚙️</div>
@@ -499,6 +510,10 @@
               <span class="tool-icon">🔖</span>
               <span class="tool-label" id="btn-verse-bookmark-label">Bookmark</span>
             </button>
+            <button class="verse-tool-btn" id="btn-verse-create-card" title="Create Shareable Scripture Card">
+              <span class="tool-icon">🎨</span>
+              <span class="tool-label">Card</span>
+            </button>
             <button class="verse-tool-btn" id="btn-verse-copy" title="Copy Verse">
               <span class="tool-icon">📋</span>
               <span class="tool-label">Copy</span>
@@ -586,6 +601,11 @@
                 <span>Future (Locked)</span>
               </div>
             </div>
+
+            <!-- View Monthly Summary Button -->
+            <button class="btn-primary" id="btn-open-monthly-summary" style="width: 100%; margin-top: 14px; padding: 12px; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>🏆</span> My Spiritual Walk Summary
+            </button>
           </div>
         </div>
       </section>
@@ -1313,6 +1333,233 @@
             </button>
             <button class="btn-secondary-action" id="btn-confirm-cancel" style="padding: 12px; font-size: 0.9rem; justify-content: center;">
               Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shareable Scripture & Reflection Card Generator Modal (Phase 3: Feature 1) -->
+    <div class="modal-backdrop" id="modal-card-generator" style="display: none;">
+      <div class="modal-sheet card-generator-sheet">
+        <div class="sheet-handle"></div>
+        <div class="card-generator-header">
+          <div class="card-gen-title-box">
+            <span class="card-gen-icon">🎨</span>
+            <div>
+              <h2 class="card-gen-title">Shareable Scripture Card</h2>
+              <p class="card-gen-subtitle">Create &amp; share an aesthetic devotional image</p>
+            </div>
+          </div>
+          <button class="sheet-close-btn" id="btn-close-card-generator" title="Close Designer">✕</button>
+        </div>
+
+        <div class="card-generator-body">
+          <!-- Live Preview Canvas Container -->
+          <div class="card-canvas-preview-wrap">
+            <div class="canvas-aspect-frame" id="canvas-aspect-frame">
+              <canvas id="scripture-card-canvas" width="1080" height="1350"></canvas>
+            </div>
+            <div class="canvas-scale-hint">Live Canvas Preview • 100% On-Device</div>
+          </div>
+
+          <!-- Controls Section -->
+          <div class="card-generator-controls">
+            <!-- Aspect Ratio Selector -->
+            <div class="card-ctrl-group">
+              <label class="card-ctrl-label">📐 Aspect Ratio</label>
+              <div class="aspect-ratio-selector" id="aspect-ratio-selector">
+                <button type="button" class="aspect-btn active" data-aspect="portrait">Portrait (4:5)</button>
+                <button type="button" class="aspect-btn" data-aspect="story">Story (9:16)</button>
+                <button type="button" class="aspect-btn" data-aspect="square">Square (1:1)</button>
+              </div>
+            </div>
+
+            <!-- Background Theme Selector -->
+            <div class="card-ctrl-group">
+              <label class="card-ctrl-label">🎨 Devotional Theme</label>
+              <div class="card-themes-grid" id="card-themes-grid">
+                <button type="button" class="card-theme-btn active theme-midnight" data-theme="midnight" title="Midnight Gold">
+                  <span class="theme-swatch"></span>
+                  <span class="theme-name">Midnight Gold</span>
+                </button>
+                <button type="button" class="card-theme-btn theme-dawn" data-theme="dawn" title="Dawn Radiance">
+                  <span class="theme-swatch"></span>
+                  <span class="theme-name">Dawn Radiance</span>
+                </button>
+                <button type="button" class="card-theme-btn theme-ocean" data-theme="ocean" title="Living Waters">
+                  <span class="theme-swatch"></span>
+                  <span class="theme-name">Living Waters</span>
+                </button>
+                <button type="button" class="card-theme-btn theme-garden" data-theme="garden" title="Olive Garden">
+                  <span class="theme-swatch"></span>
+                  <span class="theme-name">Olive Garden</span>
+                </button>
+                <button type="button" class="card-theme-btn theme-photo" id="btn-theme-photo" data-theme="photo" title="My Devotional Photo" style="display: none;">
+                  <span class="theme-swatch"></span>
+                  <span class="theme-name">My Photo</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Content Options -->
+            <div class="card-ctrl-group">
+              <label class="card-ctrl-label">✍️ Content &amp; Reflection</label>
+              <div class="card-checkbox-row">
+                <input type="checkbox" id="check-include-reflection" class="card-checkbox">
+                <label for="check-include-reflection" class="card-checkbox-label">Include my devotional reflection snippet</label>
+              </div>
+              <div class="card-checkbox-row">
+                <input type="checkbox" id="check-include-watermark" class="card-checkbox" checked>
+                <label for="check-include-watermark" class="card-checkbox-label">Include subtle "Daily Devotions" footer</label>
+              </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="card-actions-bar">
+              <button type="button" class="btn-primary" id="btn-card-save-image">
+                <span>📥</span> Save Image (PNG)
+              </button>
+              <button type="button" class="btn-secondary-action" id="btn-card-share-native">
+                <span>📤</span> Share
+              </button>
+              <button type="button" class="btn-secondary-action" id="btn-card-copy-clipboard" title="Copy Image to Clipboard">
+                <span>📋</span> Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly "Spiritual Walk with God" Summary Infographic Modal (Phase 3: Feature 8) -->
+    <div class="modal-backdrop" id="modal-monthly-summary" style="display: none;">
+      <div class="modal-sheet monthly-summary-sheet">
+        <div class="sheet-handle"></div>
+        <div class="monthly-summary-header">
+          <div class="monthly-summary-title-box">
+            <span class="monthly-summary-icon">🏆</span>
+            <div>
+              <h2 class="monthly-summary-title">My Spiritual Walk with God</h2>
+              <p class="monthly-summary-subtitle" id="monthly-summary-subtitle-text">Celebrating your consistency in God's Word</p>
+            </div>
+          </div>
+          <button class="sheet-close-btn" id="btn-close-monthly-summary" title="Close Summary">✕</button>
+        </div>
+
+        <div class="monthly-summary-body">
+          <!-- Month Selector -->
+          <div class="summary-month-bar">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Select Month:</span>
+            <select class="month-selector-select" id="summary-month-select" style="padding: 6px 12px; font-size: 0.85rem;">
+              <option value="2026-11" selected>November 2026</option>
+              <option value="2026-10">October 2026</option>
+              <option value="2026-09">September 2026</option>
+            </select>
+          </div>
+
+          <!-- Printable / Exportable Infographic Card Frame -->
+          <div class="summary-infographic-card" id="summary-infographic-card">
+            <!-- Header Banner -->
+            <div class="summary-banner">
+              <div class="summary-banner-badge">✨ MONTH IN REVIEW</div>
+              <h3 class="summary-banner-title" id="summary-banner-month-title">November 2026</h3>
+              <p class="summary-banner-desc">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
+            </div>
+
+            <!-- Milestone Grid -->
+            <div class="summary-metrics-grid">
+              <!-- Days Completed -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">📖</span>
+                  <span class="metric-tag gold" id="summary-metric-pct">0%</span>
+                </div>
+                <div class="metric-value" id="summary-metric-days">0 / 30</div>
+                <div class="metric-label">Days in Scripture</div>
+              </div>
+
+              <!-- Devotion Streak -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">🔥</span>
+                  <span class="metric-tag green">Streak</span>
+                </div>
+                <div class="metric-value" id="summary-metric-streak">0</div>
+                <div class="metric-label">Consecutive Day Streak</div>
+              </div>
+
+              <!-- Sunday Attendance -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">⛪</span>
+                  <span class="metric-tag blue">Attendance</span>
+                </div>
+                <div class="metric-value" id="summary-metric-sunday">0 / 4</div>
+                <div class="metric-label">Sunday Services Attended</div>
+              </div>
+
+              <!-- Journal Reflections -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">✍️</span>
+                  <span class="metric-tag purple">Journal</span>
+                </div>
+                <div class="metric-value" id="summary-metric-notes">0</div>
+                <div class="metric-label">Reflections Written</div>
+              </div>
+
+              <!-- Verses Highlighted -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">✨</span>
+                  <span class="metric-tag gold">Highlights</span>
+                </div>
+                <div class="metric-value" id="summary-metric-highlights">0</div>
+                <div class="metric-label">Scriptures Highlighted</div>
+              </div>
+
+              <!-- Photos Captured -->
+              <div class="summary-metric-box">
+                <div class="metric-top">
+                  <span class="metric-icon">📷</span>
+                  <span class="metric-tag green">Memories</span>
+                </div>
+                <div class="metric-value" id="summary-metric-photos">0</div>
+                <div class="metric-label">Devotional Photos</div>
+              </div>
+            </div>
+
+            <!-- Top Faith Themes / Tags -->
+            <div class="summary-tags-section" id="summary-top-tags-section">
+              <div class="summary-section-label">🏷️ Top Faith Themes This Month:</div>
+              <div class="summary-tags-chips" id="summary-top-tags-chips">
+                <!-- Tag chips dynamically rendered -->
+              </div>
+            </div>
+
+            <!-- Encouraging Blessing Banner -->
+            <div class="summary-blessing-box">
+              <span class="blessing-quote-mark">“</span>
+              <p class="blessing-text" id="summary-blessing-text">
+                Well done, faithful servant! Every day spent in God's presence deepens your roots in faith. Continue to let His peace guard your heart.
+              </p>
+              <span class="blessing-verse-ref" id="summary-blessing-verse">— Colossians 3:16</span>
+            </div>
+
+            <!-- Watermark / Footer -->
+            <div class="summary-card-footer">
+              <span>Daily Bread: LifeChurch Devotions • 100% Private Offline</span>
+            </div>
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="summary-actions-bar">
+            <button type="button" class="btn-primary" id="btn-summary-save-image">
+              <span>🖼️</span> Save Infographic (PNG)
+            </button>
+            <button type="button" class="btn-secondary-action" id="btn-summary-share-native">
+              <span>📤</span> Share
             </button>
           </div>
         </div>

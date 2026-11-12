@@ -26,7 +26,18 @@
     activeSundayDateStr: null,   // active date for Sunday modal
     selectedJournalMonth: '2026-11',
     soapFormatEnabled: false,
-    isCurrentDayLocked: false
+    isCurrentDayLocked: false,
+    cardGen: {
+      verseText: '',
+      reference: '',
+      reflection: '',
+      photoDataUrl: null,
+      aspect: 'portrait',
+      theme: 'midnight',
+      includeReflection: false,
+      includeWatermark: true
+    },
+    activeSummaryMonth: '2026-11'
   };
 
   // DOM Elements cache
@@ -254,9 +265,45 @@
     el.verseActionSubText = document.getElementById('verse-action-sub-text');
     el.btnVerseBookmark = document.getElementById('btn-verse-bookmark');
     el.btnVerseBookmarkLabel = document.getElementById('btn-verse-bookmark-label');
+    el.btnVerseCreateCard = document.getElementById('btn-verse-create-card');
     el.btnVerseCopy = document.getElementById('btn-verse-copy');
     el.btnVerseClear = document.getElementById('btn-verse-clear');
     el.btnVerseClose = document.getElementById('btn-verse-close');
+
+    // Shareable Scripture Card Generator Modal (Phase 3)
+    el.modalCardGenerator = document.getElementById('modal-card-generator');
+    el.btnCloseCardGenerator = document.getElementById('btn-close-card-generator');
+    el.scriptureCardCanvas = document.getElementById('scripture-card-canvas');
+    el.canvasAspectFrame = document.getElementById('canvas-aspect-frame');
+    el.aspectRatioSelector = document.getElementById('aspect-ratio-selector');
+    el.cardThemesGrid = document.getElementById('card-themes-grid');
+    el.btnThemePhoto = document.getElementById('btn-theme-photo');
+    el.checkIncludeReflection = document.getElementById('check-include-reflection');
+    el.checkIncludeWatermark = document.getElementById('check-include-watermark');
+    el.btnCardSaveImage = document.getElementById('btn-card-save-image');
+    el.btnCardShareNative = document.getElementById('btn-card-share-native');
+    el.btnCardCopyClipboard = document.getElementById('btn-card-copy-clipboard');
+
+    // Monthly Summary Infographic Modal (Phase 3)
+    el.modalMonthlySummary = document.getElementById('modal-monthly-summary');
+    el.btnCloseMonthlySummary = document.getElementById('btn-close-monthly-summary');
+    el.summaryMonthSelect = document.getElementById('summary-month-select');
+    el.summaryInfographicCard = document.getElementById('summary-infographic-card');
+    el.summaryBannerMonthTitle = document.getElementById('summary-banner-month-title');
+    el.summaryMetricPct = document.getElementById('summary-metric-pct');
+    el.summaryMetricDays = document.getElementById('summary-metric-days');
+    el.summaryMetricStreak = document.getElementById('summary-metric-streak');
+    el.summaryMetricSunday = document.getElementById('summary-metric-sunday');
+    el.summaryMetricNotes = document.getElementById('summary-metric-notes');
+    el.summaryMetricHighlights = document.getElementById('summary-metric-highlights');
+    el.summaryMetricPhotos = document.getElementById('summary-metric-photos');
+    el.summaryTopTagsChips = document.getElementById('summary-top-tags-chips');
+    el.summaryBlessingText = document.getElementById('summary-blessing-text');
+    el.summaryBlessingVerse = document.getElementById('summary-blessing-verse');
+    el.btnSummarySaveImage = document.getElementById('btn-summary-save-image');
+    el.btnSummaryShareNative = document.getElementById('btn-summary-share-native');
+    el.btnOpenMonthlySummary = document.getElementById('btn-open-monthly-summary');
+    el.cardNavMonthlySummary = document.getElementById('card-nav-monthly-summary');
 
     // Sunday Church Service Modal
     el.modalSundayService = document.getElementById('modal-sunday-service');
@@ -1242,6 +1289,109 @@
         e.stopPropagation();
         closeVerseActionBar();
       });
+    }
+
+    if (el.btnVerseCreateCard) {
+      el.btnVerseCreateCard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (state.selectedVerse) {
+          openCardGenerator({
+            verseText: state.selectedVerse.text,
+            reference: state.selectedVerse.reference,
+            translation: state.selectedVerse.translation || 'BSB',
+            dayNum: state.selectedVerse.dayNum || state.currentDay,
+            dateStr: state.selectedVerse.dateStr || getDayDateStr(state.currentDay)
+          });
+        }
+      });
+    }
+
+    // Shareable Scripture Card Generator Controls (Phase 3)
+    if (el.btnCloseCardGenerator) {
+      el.btnCloseCardGenerator.addEventListener('click', closeCardGenerator);
+    }
+    if (el.modalCardGenerator) {
+      el.modalCardGenerator.addEventListener('click', (e) => {
+        if (e.target === el.modalCardGenerator) closeCardGenerator();
+      });
+    }
+
+    if (el.aspectRatioSelector) {
+      el.aspectRatioSelector.querySelectorAll('.aspect-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          el.aspectRatioSelector.querySelectorAll('.aspect-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.cardGen.aspect = btn.dataset.aspect || 'portrait';
+          drawScriptureCard();
+        });
+      });
+    }
+
+    if (el.cardThemesGrid) {
+      el.cardThemesGrid.querySelectorAll('.card-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          el.cardThemesGrid.querySelectorAll('.card-theme-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.cardGen.theme = btn.dataset.theme || 'midnight';
+          drawScriptureCard();
+        });
+      });
+    }
+
+    if (el.checkIncludeReflection) {
+      el.checkIncludeReflection.addEventListener('change', () => {
+        state.cardGen.includeReflection = el.checkIncludeReflection.checked;
+        drawScriptureCard();
+      });
+    }
+
+    if (el.checkIncludeWatermark) {
+      el.checkIncludeWatermark.addEventListener('change', () => {
+        state.cardGen.includeWatermark = el.checkIncludeWatermark.checked;
+        drawScriptureCard();
+      });
+    }
+
+    if (el.btnCardSaveImage) {
+      el.btnCardSaveImage.addEventListener('click', downloadCardImage);
+    }
+    if (el.btnCardShareNative) {
+      el.btnCardShareNative.addEventListener('click', shareCardImage);
+    }
+    if (el.btnCardCopyClipboard) {
+      el.btnCardCopyClipboard.addEventListener('click', copyCardImage);
+    }
+
+    // Monthly Summary Infographic Controls (Phase 3)
+    if (el.btnOpenMonthlySummary) {
+      el.btnOpenMonthlySummary.addEventListener('click', () => {
+        openMonthlySummary('2026-11');
+      });
+    }
+    if (el.cardNavMonthlySummary) {
+      el.cardNavMonthlySummary.addEventListener('click', () => {
+        openMonthlySummary('2026-11');
+      });
+    }
+    if (el.btnCloseMonthlySummary) {
+      el.btnCloseMonthlySummary.addEventListener('click', closeMonthlySummary);
+    }
+    if (el.modalMonthlySummary) {
+      el.modalMonthlySummary.addEventListener('click', (e) => {
+        if (e.target === el.modalMonthlySummary) closeMonthlySummary();
+      });
+    }
+    if (el.summaryMonthSelect) {
+      el.summaryMonthSelect.addEventListener('change', (e) => {
+        state.activeSummaryMonth = e.target.value;
+        renderMonthlySummary(e.target.value);
+      });
+    }
+    if (el.btnSummarySaveImage) {
+      el.btnSummarySaveImage.addEventListener('click', saveMonthlySummaryImage);
+    }
+    if (el.btnSummaryShareNative) {
+      el.btnSummaryShareNative.addEventListener('click', shareMonthlySummaryNative);
     }
 
     // Dismiss verse toolbar on outside click or Escape
@@ -3526,6 +3676,9 @@
           <button class="btn-highlight-action btn-read-context" data-id="${hl.id}" data-day="${hl.dayNum || ''}" data-ref="${hl.reference}">
             <span>📖</span> Read in Context
           </button>
+          <button class="btn-highlight-action btn-card-highlight" data-id="${hl.id}">
+            <span>🎨</span> Card
+          </button>
           <button class="btn-highlight-action btn-copy-highlight" data-id="${hl.id}">
             <span>📋</span> Copy
           </button>
@@ -3560,6 +3713,20 @@
 
         showToast(`Viewing ${hl.reference} in context 📖`);
       });
+
+      // Create card button
+      const btnCard = card.querySelector('.btn-card-highlight');
+      if (btnCard) {
+        btnCard.addEventListener('click', () => {
+          openCardGenerator({
+            verseText: hl.text,
+            reference: hl.reference,
+            translation: hl.translation || 'BSB',
+            dayNum: hl.dayNum,
+            dateStr: hl.dateStr
+          });
+        });
+      }
 
       // Copy button
       const btnCopy = card.querySelector('.btn-copy-highlight');
@@ -4184,6 +4351,568 @@
     }
   }
 
+  // ==========================================================================
+  // Phase 3: Shareable Scripture Card Generator & Monthly Walk Infographic
+  // ==========================================================================
+
+  // --- Scripture Card Generator Controller ---
+  async function openCardGenerator(opts = {}) {
+    let text = opts.verseText || (state.selectedVerse ? state.selectedVerse.text : '');
+    let ref = opts.reference || (state.selectedVerse ? state.selectedVerse.reference : 'Scripture');
+    const translation = opts.translation || (window.bibleService ? window.bibleService.activeTranslation : 'BSB');
+    const dateStr = opts.dateStr || (opts.dayNum ? getDayDateStr(opts.dayNum) : getDayDateStr(state.currentDay));
+
+    // If no text given, take first verse of current day
+    if (!text && el.passagesContainer) {
+      const firstVerseEl = el.passagesContainer.querySelector('.verse-item');
+      if (firstVerseEl) {
+        text = firstVerseEl.dataset.verseText || firstVerseEl.innerText;
+        ref = firstVerseEl.dataset.verseRef || ref;
+      }
+    }
+
+    state.cardGen.verseText = text;
+    state.cardGen.reference = `${ref} • ${translation}`;
+
+    // Open modal immediately for instant UI responsiveness
+    if (el.modalCardGenerator) {
+      el.modalCardGenerator.style.display = 'flex';
+    }
+
+    drawScriptureCard();
+
+    let reflectionText = '';
+    let photoDataUrl = null;
+    if (dateStr) {
+      const noteRec = await window.devotionStore.getNoteRecord(dateStr);
+      if (noteRec && noteRec.note) {
+        try {
+          const parsed = JSON.parse(noteRec.note);
+          if (parsed.format === 'soap') {
+            reflectionText = parsed.application || parsed.observation || parsed.prayer || '';
+          } else {
+            reflectionText = parsed.text || noteRec.note;
+          }
+        } catch {
+          reflectionText = noteRec.note;
+        }
+      }
+      const imgRec = await window.devotionStore.getImage(dateStr);
+      if (imgRec && imgRec.dataUrl) {
+        photoDataUrl = imgRec.dataUrl;
+      }
+    }
+
+    state.cardGen.reflection = (reflectionText || '').trim();
+    state.cardGen.photoDataUrl = photoDataUrl;
+
+    if (el.btnThemePhoto) {
+      if (photoDataUrl) {
+        el.btnThemePhoto.style.display = 'inline-flex';
+      } else {
+        el.btnThemePhoto.style.display = 'none';
+        if (state.cardGen.theme === 'photo') state.cardGen.theme = 'midnight';
+      }
+    }
+
+    if (el.checkIncludeReflection) {
+      if (reflectionText && reflectionText.trim().length > 0) {
+        el.checkIncludeReflection.parentElement.style.display = 'flex';
+      } else {
+        el.checkIncludeReflection.parentElement.style.display = 'none';
+        state.cardGen.includeReflection = false;
+        el.checkIncludeReflection.checked = false;
+      }
+    }
+
+    drawScriptureCard();
+  }
+
+  function closeCardGenerator() {
+    if (el.modalCardGenerator) {
+      el.modalCardGenerator.style.display = 'none';
+    }
+  }
+
+  function drawScriptureCard() {
+    const canvas = el.scriptureCardCanvas;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const { verseText, reference, reflection, photoDataUrl, aspect, theme, includeReflection, includeWatermark } = state.cardGen;
+
+    let width = 1080;
+    let height = 1350; // default portrait (4:5)
+    if (aspect === 'story') height = 1920; // 9:16
+    if (aspect === 'square') height = 1080; // 1:1
+
+    canvas.width = width;
+    canvas.height = height;
+
+    if (el.canvasAspectFrame) {
+      el.canvasAspectFrame.style.aspectRatio = `${width} / ${height}`;
+    }
+
+    const renderCard = (bgImg = null) => {
+      // 1. Background
+      if (theme === 'photo' && bgImg) {
+        const hRatio = width / bgImg.width;
+        const vRatio = height / bgImg.height;
+        const ratio = Math.max(hRatio, vRatio);
+        const centerShiftX = (width - bgImg.width * ratio) / 2;
+        const centerShiftY = (height - bgImg.height * ratio) / 2;
+        ctx.drawImage(bgImg, 0, 0, bgImg.width, bgImg.height, centerShiftX, centerShiftY, bgImg.width * ratio, bgImg.height * ratio);
+
+        const vignette = ctx.createLinearGradient(0, 0, 0, height);
+        vignette.addColorStop(0, 'rgba(11, 15, 25, 0.7)');
+        vignette.addColorStop(0.5, 'rgba(11, 15, 25, 0.6)');
+        vignette.addColorStop(1, 'rgba(11, 15, 25, 0.85)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, width, height);
+      } else if (theme === 'dawn') {
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#4c0519');
+        grad.addColorStop(0.4, '#831843');
+        grad.addColorStop(1, '#d97706');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      } else if (theme === 'ocean') {
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#022c43');
+        grad.addColorStop(0.5, '#0f172a');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      } else if (theme === 'garden') {
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#064e3b');
+        grad.addColorStop(0.5, '#022c22');
+        grad.addColorStop(1, '#059669');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      } else { // midnight
+        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#070a12');
+        grad.addColorStop(0.5, '#0f172a');
+        grad.addColorStop(1, '#1e293b');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // 2. Decorative Double Border
+      const margin = 50;
+      ctx.strokeStyle = (theme === 'dawn') ? 'rgba(255, 241, 242, 0.28)' : ((theme === 'garden') ? 'rgba(209, 250, 229, 0.28)' : 'rgba(245, 158, 11, 0.35)');
+      ctx.lineWidth = 3;
+      roundRect(ctx, margin, margin, width - margin * 2, height - margin * 2, 28);
+      ctx.stroke();
+
+      // 3. Header Dove Icon
+      ctx.font = '54px "Apple Color Emoji", "Segoe UI Emoji", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🕊️', width / 2, margin + 70);
+
+      // 4. Scripture Verse
+      const textMargin = 110;
+      const maxTextWidth = width - textMargin * 2;
+      const rawText = (verseText || '').trim();
+
+      let fontSize = 42;
+      if (rawText.length > 260) fontSize = 30;
+      else if (rawText.length > 150) fontSize = 35;
+      else if (rawText.length < 80) fontSize = 48;
+
+      ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+      ctx.shadowBlur = 12;
+
+      const lines = getLines(ctx, `“${rawText}”`, maxTextWidth);
+      const lineHeight = fontSize * 1.55;
+      const totalTextHeight = lines.length * lineHeight;
+
+      let startY = (height / 2) - (totalTextHeight / 2) - 40;
+      if (includeReflection && reflection) {
+        startY -= 80;
+      }
+
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, width / 2, startY + (idx * lineHeight));
+      });
+
+      ctx.shadowBlur = 0;
+
+      // 5. Scripture Reference Badge
+      const refY = startY + totalTextHeight + 42;
+      ctx.font = 'bold 30px "Plus Jakarta Sans", -apple-system, sans-serif';
+      const goldColor = (theme === 'dawn') ? '#fde68a' : ((theme === 'garden') ? '#6ee7b7' : '#f59e0b');
+      ctx.fillStyle = goldColor;
+      ctx.fillText(reference || 'Scripture', width / 2, refY);
+
+      // 6. Optional Reflection Snippet
+      if (includeReflection && reflection) {
+        const divY = refY + 45;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(width / 2 - 120, divY);
+        ctx.lineTo(width / 2 + 120, divY);
+        ctx.stroke();
+
+        ctx.font = 'italic 25px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        const refLines = getLines(ctx, `My Reflection: "${reflection.slice(0, 180)}${reflection.length > 180 ? '...' : ''}"`, maxTextWidth - 60);
+        const refLineHeight = 36;
+        refLines.forEach((rLine, rIdx) => {
+          ctx.fillText(rLine, width / 2, divY + 38 + (rIdx * refLineHeight));
+        });
+      }
+
+      // 7. Watermark Footer
+      if (includeWatermark) {
+        ctx.font = '600 20px "Plus Jakarta Sans", -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.fillText('DAILY BREAD • LIFECHURCH DEVOTIONS', width / 2, height - margin - 35);
+      }
+    };
+
+    if (theme === 'photo' && photoDataUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => renderCard(img);
+      img.onerror = () => renderCard(null);
+      img.src = photoDataUrl;
+    } else {
+      renderCard(null);
+    }
+  }
+
+  function downloadCardImage() {
+    const canvas = el.scriptureCardCanvas;
+    if (!canvas) return;
+    const cleanRef = (state.cardGen.reference || 'scripture-card').replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `${cleanRef}.png`;
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast(`Saved scripture card: ${filename} 📥`);
+  }
+
+  async function shareCardImage() {
+    const canvas = el.scriptureCardCanvas;
+    if (!canvas) return;
+    const cleanRef = (state.cardGen.reference || 'scripture-card').replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `${cleanRef}.png`;
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        downloadCardImage();
+        return;
+      }
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Daily Scripture Reading',
+            text: `“${state.cardGen.verseText}” — ${state.cardGen.reference}`
+          });
+          showToast('Card shared successfully! 📤');
+          return;
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.warn('Share error:', err);
+          }
+        }
+      }
+      downloadCardImage();
+    }, 'image/png');
+  }
+
+  function copyCardImage() {
+    const canvas = el.scriptureCardCanvas;
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      if (navigator.clipboard && navigator.clipboard.write) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('Scripture card copied to clipboard 📋!');
+        } catch (err) {
+          console.warn('Clipboard write error:', err);
+          downloadCardImage();
+        }
+      } else {
+        downloadCardImage();
+      }
+    }, 'image/png');
+  }
+
+  function roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+
+  function getLines(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + " " + word).width;
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  }
+
+  // --- Monthly "Spiritual Walk with God" Infographic Controller ---
+  async function openMonthlySummary(monthStr = '2026-11') {
+    state.activeSummaryMonth = monthStr;
+    if (el.summaryMonthSelect) el.summaryMonthSelect.value = monthStr;
+    if (el.modalMonthlySummary) el.modalMonthlySummary.style.display = 'flex';
+    await renderMonthlySummary(monthStr);
+  }
+
+  function closeMonthlySummary() {
+    if (el.modalMonthlySummary) {
+      el.modalMonthlySummary.style.display = 'none';
+    }
+  }
+
+  async function renderMonthlySummary(monthStr = '2026-11') {
+    const allCompletions = await window.devotionStore.getAllCompletions();
+    const allNotes = await window.devotionStore.getAllNotes();
+    const allServices = await window.devotionStore.getAllSundayServices();
+    const allHighlights = await window.devotionStore.getAllHighlights();
+    const allImages = await window.devotionStore.getAllImages();
+
+    const [yStr, mStr] = monthStr.split('-');
+    const y = parseInt(yStr, 10) || 2026;
+    const m = parseInt(mStr, 10) || 11;
+    const daysInMonth = (m === 2) ? 28 : (([4, 6, 9, 11].includes(m)) ? 30 : 31);
+
+    const monthDate = new Date(y, m - 1, 1);
+    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (el.summaryBannerMonthTitle) el.summaryBannerMonthTitle.textContent = monthName;
+
+    // Filter completions
+    const monthCompletions = allCompletions.filter(c => c.date && c.date.startsWith(monthStr) && c.completed);
+    const completedCount = monthCompletions.length;
+    const pct = Math.round((completedCount / daysInMonth) * 100);
+
+    if (el.summaryMetricDays) el.summaryMetricDays.textContent = `${completedCount} / ${daysInMonth}`;
+    if (el.summaryMetricPct) el.summaryMetricPct.textContent = `${pct}%`;
+
+    // Longest streak this month
+    const completedDaysSet = new Set(monthCompletions.map(c => parseInt(c.date.slice(-2), 10)));
+    let maxStreak = 0;
+    let currStreak = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (completedDaysSet.has(d)) {
+        currStreak++;
+        if (currStreak > maxStreak) maxStreak = currStreak;
+      } else {
+        currStreak = 0;
+      }
+    }
+    if (el.summaryMetricStreak) el.summaryMetricStreak.textContent = `${maxStreak} Days`;
+
+    // Sundays in month
+    let sundaysCount = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(y, m - 1, d).getDay() === 0) sundaysCount++;
+    }
+    const monthServices = allServices.filter(s => s.date && s.date.startsWith(monthStr) && s.attended);
+    if (el.summaryMetricSunday) el.summaryMetricSunday.textContent = `${monthServices.length} / ${sundaysCount}`;
+
+    // Notes
+    const monthNotes = allNotes.filter(n => n.date && n.date.startsWith(monthStr) && n.note && n.note.trim().length > 0);
+    if (el.summaryMetricNotes) el.summaryMetricNotes.textContent = String(monthNotes.length);
+
+    // Highlights
+    const monthHighlights = allHighlights.filter(h => h.dateStr && h.dateStr.startsWith(monthStr));
+    if (el.summaryMetricHighlights) el.summaryMetricHighlights.textContent = String(monthHighlights.length);
+
+    // Photos
+    const monthPhotos = allImages.filter(img => img.date && img.date.startsWith(monthStr));
+    if (el.summaryMetricPhotos) el.summaryMetricPhotos.textContent = String(monthPhotos.length);
+
+    // Top Tags Frequency
+    const tagCountMap = new Map();
+    monthNotes.forEach(n => {
+      if (Array.isArray(n.tags)) {
+        n.tags.forEach(t => {
+          const clean = t.trim().replace(/^#+/, '');
+          if (clean) tagCountMap.set(clean, (tagCountMap.get(clean) || 0) + 1);
+        });
+      }
+    });
+    monthServices.forEach(s => {
+      if (Array.isArray(s.tags)) {
+        s.tags.forEach(t => {
+          const clean = t.trim().replace(/^#+/, '');
+          if (clean) tagCountMap.set(clean, (tagCountMap.get(clean) || 0) + 1);
+        });
+      }
+    });
+
+    const sortedTags = Array.from(tagCountMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    if (el.summaryTopTagsChips) {
+      el.summaryTopTagsChips.innerHTML = '';
+      if (sortedTags.length === 0) {
+        el.summaryTopTagsChips.innerHTML = `<span style="font-size: 0.78rem; color: var(--text-muted); font-style: italic;">No tags recorded this month yet.</span>`;
+      } else {
+        sortedTags.forEach(([tag, count]) => {
+          const chip = document.createElement('span');
+          chip.className = 'card-tag-pill';
+          chip.textContent = `#${tag} (${count})`;
+          el.summaryTopTagsChips.appendChild(chip);
+        });
+      }
+    }
+
+    // Dynamic Pastoral Encouragement
+    if (el.summaryBlessingText && el.summaryBlessingVerse) {
+      if (completedCount >= 20) {
+        el.summaryBlessingText.textContent = "Well done, faithful servant! Your daily consistency in God's Word has planted deep spiritual roots this month. Continue walking closely in His grace.";
+        el.summaryBlessingVerse.textContent = "— Psalm 1:2-3";
+      } else if (completedCount >= 10) {
+        el.summaryBlessingText.textContent = "Grace upon grace! You are building an inspiring habit of morning reflection and prayer. Keep pressing on toward the prize.";
+        el.summaryBlessingVerse.textContent = "— Philippians 3:14";
+      } else {
+        el.summaryBlessingText.textContent = "Every moment spent listening to God's voice matters. Remember that His mercies are new every morning, and His faithfulness is great.";
+        el.summaryBlessingVerse.textContent = "— Lamentations 3:22-23";
+      }
+    }
+  }
+
+  function saveMonthlySummaryImage() {
+    const monthStr = state.activeSummaryMonth || '2026-11';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 1350);
+    grad.addColorStop(0, '#090d16');
+    grad.addColorStop(0.5, '#0f172a');
+    grad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+    ctx.lineWidth = 3;
+    roundRect(ctx, 40, 40, 1000, 1270, 24);
+    ctx.stroke();
+
+    ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#f59e0b';
+    ctx.textAlign = 'center';
+    ctx.fillText('✨ MY SPIRITUAL WALK WITH GOD', 540, 110);
+
+    const titleText = (el.summaryBannerMonthTitle ? el.summaryBannerMonthTitle.textContent : 'November 2026') + ' Summary';
+    ctx.font = 'bold 50px "Charter", "Georgia", serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(titleText, 540, 175);
+
+    ctx.font = 'italic 26px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText('"Your word is a lamp to my feet and a light to my path." — Psalm 119:105', 540, 225);
+
+    const metrics = [
+      { icon: '📖', label: 'Days in Scripture', val: el.summaryMetricDays ? el.summaryMetricDays.textContent : '0 / 30' },
+      { icon: '🔥', label: 'Day Streak', val: el.summaryMetricStreak ? el.summaryMetricStreak.textContent : '0' },
+      { icon: '⛪', label: 'Sunday Services', val: el.summaryMetricSunday ? el.summaryMetricSunday.textContent : '0' },
+      { icon: '✍️', label: 'Journal Reflections', val: el.summaryMetricNotes ? el.summaryMetricNotes.textContent : '0' },
+      { icon: '✨', label: 'Scriptures Highlighted', val: el.summaryMetricHighlights ? el.summaryMetricHighlights.textContent : '0' },
+      { icon: '📷', label: 'Devotional Photos', val: el.summaryMetricPhotos ? el.summaryMetricPhotos.textContent : '0' }
+    ];
+
+    const gridStartX = 90;
+    const gridStartY = 280;
+    const boxWidth = 430;
+    const boxHeight = 160;
+    const gapX = 40;
+    const gapY = 30;
+
+    metrics.forEach((m, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const bx = gridStartX + col * (boxWidth + gapX);
+      const by = gridStartY + row * (boxHeight + gapY);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      roundRect(ctx, bx, by, boxWidth, boxHeight, 16);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.font = '40px "Apple Color Emoji", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(m.icon, bx + 24, by + 56);
+
+      ctx.font = 'bold 42px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(m.val, bx + 24, by + 115);
+
+      ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(m.label, bx + 80, by + 54);
+    });
+
+    const blessY = 920;
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+    roundRect(ctx, 90, blessY, 900, 230, 16);
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.font = 'italic 28px "Charter", "Georgia", serif';
+    ctx.fillStyle = '#fef3c7';
+    ctx.textAlign = 'center';
+    const bLines = getLines(ctx, el.summaryBlessingText ? el.summaryBlessingText.textContent : "Well done, faithful servant! Every moment spent in God's presence deepens your faith.", 820);
+    bLines.forEach((l, lIdx) => {
+      ctx.fillText(l, 540, blessY + 70 + lIdx * 42);
+    });
+
+    ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillText(el.summaryBlessingVerse ? el.summaryBlessingVerse.textContent : '— Psalm 1:2', 540, blessY + 185);
+
+    ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillText('DAILY BREAD: LIFECHURCH DEVOTIONS • 100% PRIVATE OFFLINE', 540, 1260);
+
+    const link = document.createElement('a');
+    link.download = `spiritual-walk-summary-${monthStr}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast(`Saved infographic: spiritual-walk-summary-${monthStr}.png 🖼️`);
+  }
+
+  function shareMonthlySummaryNative() {
+    saveMonthlySummaryImage();
+  }
+
   // --- Utility Helpers ---
   function getDayDateStr(dayNum) {
     return `2026-11-${String(dayNum).padStart(2, '0')}`;
@@ -4202,6 +4931,14 @@
   window.switchView = switchView;
   window.openSundayModal = openSundayModal;
   window.closeSundayModal = closeSundayModal;
+  window.openCardGenerator = openCardGenerator;
+  window.closeCardGenerator = closeCardGenerator;
+  window.drawScriptureCard = drawScriptureCard;
+  window.downloadCardImage = downloadCardImage;
+  window.openMonthlySummary = openMonthlySummary;
+  window.closeMonthlySummary = closeMonthlySummary;
+  window.renderMonthlySummary = renderMonthlySummary;
+  window.saveMonthlySummaryImage = saveMonthlySummaryImage;
   window.renderDevotion = renderDevotion;
   window.renderJournal = renderJournal;
   window.renderJournalHighlights = renderJournalHighlights;
