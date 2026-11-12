@@ -147,14 +147,15 @@ def run_test():
     print("Gold highlight status:", gold_status)
     assert gold_status['isHighlighted'] and gold_status['hasGoldClass'], "Gold highlight class not applied"
 
-    # Toggle Emerald color
+    # Toggle Emerald color (click verse to re-enter selection mode, then click Emerald)
     print("Switching to Emerald color...")
     green_status = evaluate("""
         (() => {
+            const v = document.querySelector('.verse-item');
+            v.click(); // enter selection mode
             const greenBtn = document.querySelector('.verse-color-btn.color-green');
             if (!greenBtn) return null;
-            greenBtn.click();
-            const v = document.querySelector('.verse-item.verse-selected');
+            greenBtn.click(); // apply action and exit selection mode
             return {
                 hasGreenClass: v.classList.contains('highlight-green'),
                 hasGoldClass: v.classList.contains('highlight-gold')

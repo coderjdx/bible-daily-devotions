@@ -4562,8 +4562,10 @@ input:checked + .slider:before {
 }
 
 .verse-item.verse-selected {
-  outline: 2px dashed var(--accent-gold);
+  outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
+  background-color: rgba(245, 158, 11, 0.12);
+  border-radius: var(--radius-sm);
 }
 
 /* Highlighting Colors */
@@ -4745,6 +4747,72 @@ input:checked + .slider:before {
   border-radius: var(--radius-full);
 }
 
+.verse-tool-btn.btn-card-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.verse-count-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-gold-light);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.verse-char-warning {
+  color: #f87171;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .verse-action-bar {
+    bottom: 74px;
+    padding: 6px 12px;
+    gap: 8px;
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .verse-action-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .verse-action-ref-box {
+    min-width: 75px;
+    padding-right: 8px;
+  }
+  .verse-action-ref {
+    font-size: 0.75rem;
+    max-width: 125px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .verse-action-sub {
+    font-size: 0.6rem;
+    max-width: 125px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .verse-color-btn {
+    width: 24px;
+    height: 24px;
+  }
+  .verse-color-btn .color-dot {
+    width: 16px;
+    height: 16px;
+  }
+  .verse-tool-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+}
+
 /* Journal Highlights Tab & Cards */
 .journal-highlight-card {
   background: var(--bg-card);
@@ -4916,6 +4984,20 @@ input:checked + .slider:before {
 [data-theme="light"] .verse-item.highlight-purple {
   background-color: rgba(217, 70, 239, 0.22);
   border-left-color: #c026d3;
+}
+
+[data-theme="light"] .verse-item.verse-selected {
+  outline-color: #d97706;
+  background-color: rgba(217, 119, 6, 0.12);
+}
+
+[data-theme="light"] .verse-count-badge {
+  background: rgba(217, 119, 6, 0.15);
+  color: #b45309;
+}
+
+[data-theme="light"] .verse-char-warning {
+  color: #dc2626;
 }
 
 [data-theme="light"] .verse-action-bar {

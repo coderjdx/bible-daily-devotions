@@ -19,7 +19,17 @@
     journalTab: 'entries',       // 'entries', 'gallery' (legacy compatibility)
     journalCategory: 'all',      // 'all', 'devotions', 'sunday', 'highlights', 'gallery'
     selectedTagFilter: null,     // null or tag string (e.g. 'faith')
-    selectedVerse: null,         // currently active verse in devotion view
+    selectedVerses: [],          // array of selected verse objects in devotion view
+    get selectedVerse() {
+      return this.selectedVerses && this.selectedVerses.length > 0 ? this.selectedVerses[0] : null;
+    },
+    set selectedVerse(v) {
+      if (!v) {
+        this.selectedVerses = [];
+      } else {
+        this.selectedVerses = [v];
+      }
+    },
     activeHighlightFilter: 'all', // 'all', 'gold', 'green', 'blue', 'purple'
     devotionTags: [],            // array of tags for active devotion
     sundayTags: [],              // array of tags for Sunday modal
@@ -1285,14 +1295,23 @@
     if (el.btnVerseCreateCard) {
       el.btnVerseCreateCard.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (state.selectedVerse) {
+        if (state.selectedVerses && state.selectedVerses.length > 0) {
+          const comb = getCombinedSelectionData();
+          if (comb.isOverCardLimit) {
+            showToast(`⚠️ Selected passage is too long for an image card (${comb.totalChars}/${comb.cardCharLimit} chars). Please select fewer verses.`, 3500);
+            return;
+          }
+
           openCardGenerator({
-            verseText: state.selectedVerse.text,
-            reference: state.selectedVerse.reference,
-            translation: state.selectedVerse.translation || 'BSB',
-            dayNum: state.selectedVerse.dayNum || state.currentDay,
-            dateStr: state.selectedVerse.dateStr || getDayDateStr(state.currentDay)
+            verseText: comb.text,
+            reference: comb.reference,
+            translation: comb.translation || 'BSB',
+            dayNum: comb.dayNum || state.currentDay,
+            dateStr: comb.dateStr || getDayDateStr(state.currentDay)
           });
+
+          // Exit selection mode once action is applied
+          closeVerseActionBar();
         }
       });
     }
@@ -1385,15 +1404,7 @@
       el.btnSummaryShareNative.addEventListener('click', shareMonthlySummaryNative);
     }
 
-    // Dismiss verse toolbar on outside click or Escape
-    document.addEventListener('click', (e) => {
-      if (el.verseActionBar && el.verseActionBar.style.display !== 'none') {
-        if (!el.verseActionBar.contains(e.target) && !e.target.closest('.verse-item')) {
-          closeVerseActionBar();
-        }
-      }
-    });
-
+    // Dismiss verse toolbar on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeVerseActionBar();
@@ -2665,7 +2676,7 @@
 
             vDiv.addEventListener('click', (e) => {
               e.stopPropagation();
-              openVerseActionBar(vDiv, {
+              toggleVerseSelection(vDiv, {
                 id: verseId,
                 reference: verseRef,
                 bookId,
@@ -2693,56 +2704,197 @@
     filterPassageView();
   }
 
-  // --- Verse Action Bar & In-Text Highlighting Controller ---
-  async function openVerseActionBar(verseEl, verseData) {
-    document.querySelectorAll('.verse-item.verse-selected').forEach(elem => elem.classList.remove('verse-selected'));
-    verseEl.classList.add('verse-selected');
+  // --- Multi-Verse Selection & Action Bar Controller ---
+  function getCombinedSelectionData(verses = state.selectedVerses) {
+    if (!verses || verses.length === 0) {
+      return {
+        sorted: [],
+        reference: '',
+        shortRef: '',
+        text: '',
+        translation: 'BSB',
+        count: 0,
+        totalChars: 0,
+        isOverCardLimit: false,
+        cardCharLimit: 450,
+        ids: [],
+        dayNum: state.currentDay,
+        dateStr: getDayDateStr(state.currentDay)
+      };
+    }
 
-    state.selectedVerse = {
-      ...verseData,
-      el: verseEl,
-      currentHl: null
+    // Sort verses in canonical biblical reading order
+    const sorted = [...verses].sort((a, b) => {
+      if (a.bookId !== b.bookId) return a.bookId.localeCompare(b.bookId);
+      if (a.chapter !== b.chapter) return a.chapter - b.chapter;
+      return a.verse - b.verse;
+    });
+
+    const first = sorted[0];
+    const allSameBookAndChapter = sorted.every(v => v.bookId === first.bookId && v.chapter === first.chapter);
+
+    let reference = '';
+    if (allSameBookAndChapter) {
+      const verseNums = sorted.map(v => v.verse);
+      if (verseNums.length === 1) {
+        reference = `${first.bookName} ${first.chapter}:${first.verse}`;
+      } else {
+        // Build contiguous ranges or cluster lists: e.g. "15–16", "15, 17", "15–17, 20"
+        const clusters = [];
+        let start = verseNums[0];
+        let prev = start;
+        for (let i = 1; i < verseNums.length; i++) {
+          const cur = verseNums[i];
+          if (cur === prev + 1) {
+            prev = cur;
+          } else {
+            clusters.push(start === prev ? `${start}` : `${start}–${prev}`);
+            start = cur;
+            prev = cur;
+          }
+        }
+        clusters.push(start === prev ? `${start}` : `${start}–${prev}`);
+        reference = `${first.bookName} ${first.chapter}:${clusters.join(', ')}`;
+      }
+    } else {
+      const refs = sorted.map(v => `${v.bookName} ${v.chapter}:${v.verse}`);
+      if (refs.length <= 2) {
+        reference = refs.join(' & ');
+      } else {
+        reference = `${refs[0]} (+${refs.length - 1} verses)`;
+      }
+    }
+
+    const text = sorted.map(v => (v.text || '').trim()).join(' ');
+    const totalChars = text.length;
+    const translation = first.translation || (window.bibleService ? window.bibleService.activeTranslation : 'BSB');
+    const CARD_CHAR_LIMIT = 450;
+
+    return {
+      sorted,
+      reference,
+      text,
+      translation,
+      count: sorted.length,
+      totalChars,
+      isOverCardLimit: totalChars > CARD_CHAR_LIMIT,
+      cardCharLimit: CARD_CHAR_LIMIT,
+      ids: sorted.map(v => v.id),
+      dayNum: first.dayNum,
+      dateStr: first.dateStr
     };
+  }
 
-    if (el.verseActionRefText) {
-      el.verseActionRefText.textContent = verseData.reference;
-    }
-    if (el.verseActionSubText) {
-      el.verseActionSubText.textContent = 'Tap color to highlight';
-    }
-    document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
-    if (el.btnVerseClear) {
-      el.btnVerseClear.style.display = 'none';
+  async function toggleVerseSelection(verseEl, verseData) {
+    const existingIndex = state.selectedVerses.findIndex(v => v.id === verseData.id);
+
+    if (existingIndex >= 0) {
+      // Toggle off
+      state.selectedVerses.splice(existingIndex, 1);
+      verseEl.classList.remove('verse-selected');
+    } else {
+      // Toggle on
+      verseEl.classList.add('verse-selected');
+      state.selectedVerses.push({
+        ...verseData,
+        el: verseEl,
+        currentHl: null
+      });
     }
 
-    // Show toolbar immediately for instant zero-latency UI
+    if (state.selectedVerses.length === 0) {
+      closeVerseActionBar();
+      return;
+    }
+
+    await updateVerseActionBar();
+  }
+
+  // Alias for backward compatibility & test harnesses
+  async function openVerseActionBar(verseEl, verseData) {
+    await toggleVerseSelection(verseEl, verseData);
+  }
+
+  async function updateVerseActionBar() {
+    const comb = getCombinedSelectionData();
+    if (comb.count === 0) {
+      closeVerseActionBar();
+      return;
+    }
+
+    // Set selection mode class on container
+    if (el.passagesContainer) {
+      el.passagesContainer.classList.add('selection-mode-active');
+    }
+
+    // Show toolbar immediately
     if (el.verseActionBar) {
       el.verseActionBar.style.display = 'flex';
     }
 
-    const currentHl = await window.devotionStore.getHighlight(verseData.id);
-    if (state.selectedVerse && state.selectedVerse.id === verseData.id) {
-      state.selectedVerse.currentHl = currentHl;
-      if (currentHl && currentHl.color) {
-        if (el.verseActionSubText) {
-          el.verseActionSubText.textContent = `Highlighted in ${currentHl.color.toUpperCase()}`;
-        }
+    // Update reference header
+    if (el.verseActionRefText) {
+      if (comb.count === 1) {
+        el.verseActionRefText.innerHTML = escapeHtml(comb.reference);
+      } else {
+        el.verseActionRefText.innerHTML = `${escapeHtml(comb.reference)} <span class="verse-count-badge">${comb.count} verses</span>`;
       }
-      document.querySelectorAll('.verse-color-btn').forEach(btn => {
-        const color = btn.dataset.color;
-        if (currentHl && currentHl.color === color) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
+    }
 
-      if (el.btnVerseClear) {
-        if (currentHl && currentHl.color) {
-          el.btnVerseClear.style.display = 'inline-flex';
-        } else {
-          el.btnVerseClear.style.display = 'none';
-        }
+    // Update subtitle & character count warning
+    if (el.verseActionSubText) {
+      if (comb.isOverCardLimit) {
+        el.verseActionSubText.innerHTML = `<span class="verse-char-warning">⚠️ ${comb.totalChars} chars (Too long for Card)</span> • Tap color to highlight`;
+      } else if (comb.count === 1) {
+        el.verseActionSubText.textContent = 'Tap more verses to add • Tap color to highlight';
+      } else {
+        el.verseActionSubText.textContent = `${comb.count} verses (${comb.totalChars} chars) • Tap color to highlight`;
+      }
+    }
+
+    // Guardrail on Card button
+    if (el.btnVerseCreateCard) {
+      if (comb.isOverCardLimit) {
+        el.btnVerseCreateCard.classList.add('btn-card-disabled');
+        el.btnVerseCreateCard.title = `Text too long for an image card (${comb.totalChars}/${comb.cardCharLimit} chars max)`;
+      } else {
+        el.btnVerseCreateCard.classList.remove('btn-card-disabled');
+        el.btnVerseCreateCard.title = `Create Shareable Scripture Card (${comb.totalChars} chars)`;
+      }
+    }
+
+    // Fetch highlight statuses from IndexedDB for active color buttons and clear button
+    const allHighlights = await window.devotionStore.getAllHighlights();
+    const hlMap = new Map(allHighlights.map(h => [h.id, h]));
+
+    let anyHighlighted = false;
+    const selectedColors = new Set();
+    state.selectedVerses.forEach(v => {
+      const hl = hlMap.get(v.id);
+      v.currentHl = hl || null;
+      if (hl && hl.color) {
+        anyHighlighted = true;
+        selectedColors.add(hl.color);
+      }
+    });
+
+    // Color buttons active state
+    document.querySelectorAll('.verse-color-btn').forEach(btn => {
+      const color = btn.dataset.color;
+      if (selectedColors.size === 1 && selectedColors.has(color) && state.selectedVerses.every(v => v.currentHl && v.currentHl.color === color)) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Clear button display
+    if (el.btnVerseClear) {
+      if (anyHighlighted) {
+        el.btnVerseClear.style.display = 'inline-flex';
+        el.btnVerseClear.title = comb.count > 1 ? `Clear highlights on ${comb.count} verses` : 'Clear highlight';
+      } else {
+        el.btnVerseClear.style.display = 'none';
       }
     }
   }
@@ -2751,85 +2903,90 @@
     if (el.verseActionBar) {
       el.verseActionBar.style.display = 'none';
     }
+    if (el.passagesContainer) {
+      el.passagesContainer.classList.remove('selection-mode-active');
+    }
     document.querySelectorAll('.verse-item.verse-selected').forEach(elem => elem.classList.remove('verse-selected'));
-    state.selectedVerse = null;
+    state.selectedVerses = [];
   }
 
   async function handleVerseColorClick(color) {
-    if (!state.selectedVerse) return;
-    const { id, reference, bookId, bookName, chapter, verse, text, translation, dayNum, dateStr, el: vEl } = state.selectedVerse;
+    if (!state.selectedVerses || state.selectedVerses.length === 0) return;
+    const comb = getCombinedSelectionData();
 
-    // Immediate optimistic DOM update
-    if (vEl) {
-      vEl.classList.remove('highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
-      vEl.classList.add('verse-highlighted', `highlight-${color}`);
-    }
-
-    document.querySelectorAll('.verse-color-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.color === color);
+    // Immediate optimistic DOM updates for all selected verses
+    state.selectedVerses.forEach(v => {
+      if (v.el) {
+        v.el.classList.remove('highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
+        v.el.classList.add('verse-highlighted', `highlight-${color}`);
+      }
     });
-    if (el.verseActionSubText) {
-      el.verseActionSubText.textContent = `Highlighted in ${color.toUpperCase()}`;
-    }
-    if (el.btnVerseClear) {
-      el.btnVerseClear.style.display = 'inline-flex';
+
+    // Save each verse to IndexedDB
+    for (const v of state.selectedVerses) {
+      const record = {
+        id: v.id,
+        reference: v.reference,
+        bookId: v.bookId,
+        bookName: v.bookName,
+        chapter: v.chapter,
+        verse: v.verse,
+        color,
+        text: v.text,
+        translation: v.translation,
+        dayNum: v.dayNum,
+        dateStr: v.dateStr
+      };
+      await window.devotionStore.saveHighlight(record);
     }
 
-    const record = {
-      id,
-      reference,
-      bookId,
-      bookName,
-      chapter,
-      verse,
-      color,
-      text,
-      translation,
-      dayNum,
-      dateStr
-    };
-    state.selectedVerse.currentHl = record;
-    await window.devotionStore.saveHighlight(record);
+    showToast(`Highlighted ${comb.reference} in ${color.toUpperCase()} ✨`);
 
-    showToast(`Highlighted ${reference} ✨`);
+    // Exit selection mode once action is applied
+    closeVerseActionBar();
   }
 
   function handleVerseCopyClick() {
-    if (!state.selectedVerse) return;
-    const { reference, text, translation } = state.selectedVerse;
-    const copyText = `"${text}" — ${reference} (${translation || 'BSB'})`;
+    if (!state.selectedVerses || state.selectedVerses.length === 0) return;
+    const comb = getCombinedSelectionData();
+    const copyText = `"${comb.text}" — ${comb.reference} (${comb.translation || 'BSB'})`;
+
+    const done = () => {
+      showToast(`Copied ${comb.reference} to clipboard 📋`);
+      // Exit selection mode once action is applied
+      closeVerseActionBar();
+    };
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(copyText).then(() => {
-        showToast(`Copied ${reference} to clipboard 📋`);
-      }).catch(() => {
+      navigator.clipboard.writeText(copyText).then(done).catch(() => {
         copyFallback(copyText);
+        done();
       });
     } else {
       copyFallback(copyText);
+      done();
     }
   }
 
   async function handleVerseClearClick() {
-    if (!state.selectedVerse) return;
-    const { id, reference, el: vEl } = state.selectedVerse;
+    if (!state.selectedVerses || state.selectedVerses.length === 0) return;
+    const comb = getCombinedSelectionData();
 
     // Immediate optimistic DOM update
-    if (vEl) {
-      vEl.classList.remove('verse-highlighted', 'highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
+    state.selectedVerses.forEach(v => {
+      if (v.el) {
+        v.el.classList.remove('verse-highlighted', 'highlight-gold', 'highlight-green', 'highlight-blue', 'highlight-purple');
+      }
+    });
+
+    for (const v of state.selectedVerses) {
+      await window.devotionStore.deleteHighlight(v.id);
     }
 
-    document.querySelectorAll('.verse-color-btn').forEach(btn => btn.classList.remove('active'));
-    if (el.verseActionSubText) {
-      el.verseActionSubText.textContent = 'Tap color to highlight';
-    }
-    if (el.btnVerseClear) {
-      el.btnVerseClear.style.display = 'none';
-    }
+    showToast(`Cleared highlights from ${comb.reference}`);
 
-    state.selectedVerse.currentHl = null;
-    await window.devotionStore.deleteHighlight(id);
-
-    showToast(`Cleared highlight from ${reference}`);
+    // Exit selection mode once action is applied
+    closeVerseActionBar();
   }
 
   function copyFallback(text) {
@@ -4422,8 +4579,9 @@
       const rawText = (verseText || '').trim();
 
       let fontSize = 42;
-      if (rawText.length > 260) fontSize = 30;
-      else if (rawText.length > 150) fontSize = 35;
+      if (rawText.length > 340) fontSize = 24;
+      else if (rawText.length > 250) fontSize = 28;
+      else if (rawText.length > 140) fontSize = 34;
       else if (rawText.length < 80) fontSize = 48;
 
       ctx.font = `italic 600 ${fontSize}px "Charter", "Merriweather", "Georgia", serif`;
