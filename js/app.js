@@ -4633,8 +4633,8 @@
       // 7. Watermark Footer
       if (includeWatermark) {
         ctx.font = '600 20px "Plus Jakarta Sans", -apple-system, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.fillText('DAILY BREAD • LIFECHURCH DEVOTIONS', width / 2, height - margin - 35);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fillText('Daily Devotions | Bible Companion App', width / 2, height - margin - 35);
       }
     };
 
