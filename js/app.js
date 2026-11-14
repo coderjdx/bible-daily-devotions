@@ -1092,10 +1092,6 @@
     el.navItems.forEach(btn => {
       btn.addEventListener('click', () => {
         const view = btn.dataset.nav;
-        if (view === 'devotion') {
-          // Default to today if switching directly
-          renderDevotion(state.currentDay);
-        }
         switchView(view);
       });
     });
@@ -2113,10 +2109,6 @@
   async function renderAll() {
     updateHeaderVersion();
     await renderHome();
-    if (state.activeView === 'devotion') await renderDevotion(state.currentDay);
-    if (state.activeView === 'calendar') await renderCalendar();
-    if (state.activeView === 'journal') await renderJournal();
-    if (state.activeView === 'settings') renderSettings();
   }
 
   // --- Header Version Pill ---
@@ -2327,7 +2319,10 @@
   }
 
   // --- View 2: Devotion Reader ---
+  let currentDevotionRenderId = 0;
+
   async function renderDevotion(dayNum) {
+    const renderId = ++currentDevotionRenderId;
     const daySched = window.bibleService.getDaySchedule(dayNum);
     if (!daySched) return;
 
@@ -2364,7 +2359,13 @@
       daySched.passages.map(p => window.bibleService.getPassageVerses(activeTransId, p))
     );
 
-    await renderPassagesContent(passageResults, dayNum);
+    // If another render started while loading verses, cancel this one
+    if (renderId !== currentDevotionRenderId) return;
+
+    await renderPassagesContent(passageResults, dayNum, renderId);
+
+    // If another render started while rendering passages, cancel remaining UI updates
+    if (renderId !== currentDevotionRenderId) return;
 
     // Wire Read All TTS button (Requirement 4)
     if (el.btnReadAllTts) {
@@ -2539,13 +2540,17 @@
     });
   }
 
-  async function renderPassagesContent(passageResults, dayNum = 3) {
-    el.passagesContainer.innerHTML = '';
+  async function renderPassagesContent(passageResults, dayNum = 3, renderId) {
     closeVerseActionBar();
 
     const dateStr = getDayDateStr(dayNum);
     const activeTransId = window.bibleService.activeTranslation;
     const allHighlights = await window.devotionStore.getAllHighlights();
+
+    // If another render started while loading highlights, abort this render
+    if (renderId !== undefined && renderId !== currentDevotionRenderId) return;
+
+    el.passagesContainer.innerHTML = '';
     const highlightsMap = new Map(allHighlights.map(h => [h.id, h]));
 
     passageResults.forEach((res, idx) => {
@@ -3760,8 +3765,8 @@
         }
         if (!targetDay) targetDay = state.currentDay || 3;
 
+        state.currentDay = targetDay;
         switchView('devotion');
-        await loadDevotionDay(targetDay);
 
         // Scroll to verse after DOM updates
         setTimeout(() => {
