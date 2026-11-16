@@ -66,18 +66,20 @@ def run_tests():
         const cards = Array.from(document.querySelectorAll('.passage-card'));
         const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
         const verseCount = document.querySelectorAll('.verse-item').length;
+        const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
         
         return {
             cardCount: cards.length,
+            expectedCount: expectedCount,
             headers: headers,
             verseCount: verseCount
         };
     })()
     """, 3)
     print("Testcase A result:", json.dumps(res, indent=2))
-    assert res['cardCount'] == 4, f"Expected 4 passage cards, got {res['cardCount']}"
-    assert len(set(res['headers'])) == 4, f"Expected 4 unique headers, got {res['headers']}"
-    print("Testcase A PASSED: Exactly 4 unique passages rendered, no duplicates.")
+    assert res['cardCount'] == res['expectedCount'], f"Expected {res['expectedCount']} passage cards, got {res['cardCount']}"
+    assert len(set(res['headers'])) == res['expectedCount'], f"Expected {res['expectedCount']} unique headers, got {res['headers']}"
+    print(f"Testcase A PASSED: Exactly {res['expectedCount']} unique passages rendered, no duplicates.")
 
     # 4. Test Testcase B: Rapid clicking on Devotion nav item
     print("\n--- Testcase B: Rapid clicking on Devotion nav item (5x in 100ms) ---")
@@ -92,17 +94,19 @@ def run_tests():
 
         const cards = Array.from(document.querySelectorAll('.passage-card'));
         const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
+        const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
         return {
             cardCount: cards.length,
+            expectedCount: expectedCount,
             headers: headers,
             verseCount: document.querySelectorAll('.verse-item').length
         };
     })()
     """, 4)
     print("Testcase B result:", json.dumps(res_rapid, indent=2))
-    assert res_rapid['cardCount'] == 4, f"Expected 4 passage cards, got {res_rapid['cardCount']}"
-    assert len(set(res_rapid['headers'])) == 4, f"Expected 4 unique headers, got {res_rapid['headers']}"
-    print("Testcase B PASSED: Rapid navigation does not produce duplicate cards.")
+    assert res_rapid['cardCount'] == res_rapid['expectedCount'], f"Expected {res_rapid['expectedCount']} passage cards, got {res_rapid['cardCount']}"
+    assert len(set(res_rapid['headers'])) == res_rapid['expectedCount'], f"Expected {res_rapid['expectedCount']} unique headers, got {res_rapid['headers']}"
+    print(f"Testcase B PASSED: Rapid navigation does not produce duplicate cards.")
 
     # 5. Test Testcase C: Close out of devotion screen (switch to other views) and return
     print("\n--- Testcase C: Close out of devotion and return multiple times ---")
@@ -120,16 +124,18 @@ def run_tests():
 
             const cards = Array.from(document.querySelectorAll('.passage-card'));
             const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
+            const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
             return {{
                 fromView: '{v}',
                 cardCount: cards.length,
+                expectedCount: expectedCount,
                 headers: headers
             }};
         }})()
         """, 5)
         print(f"Cycle from '{v}' back to 'devotion': cardCount={res_cycle['cardCount']}, headers={res_cycle['headers']}")
-        assert res_cycle['cardCount'] == 4, f"Failed on cycle from {v}: expected 4 cards, got {res_cycle['cardCount']}"
-        assert len(set(res_cycle['headers'])) == 4, f"Duplicate headers found on cycle from {v}"
+        assert res_cycle['cardCount'] == res_cycle['expectedCount'], f"Failed on cycle from {v}: expected {res_cycle['expectedCount']} cards, got {res_cycle['cardCount']}"
+        assert len(set(res_cycle['headers'])) == res_cycle['expectedCount'], f"Duplicate headers found on cycle from {v}"
     print("Testcase C PASSED: Returning from other screens never duplicates passages.")
 
     # 6. Test Testcase D: Prev/Next Day navigation
@@ -141,18 +147,20 @@ def run_tests():
         
         btnNext.click();
         await new Promise(r => setTimeout(r, 600));
-        const day4Cards = document.querySelectorAll('.passage-card').length;
+        const dayCardsNext = document.querySelectorAll('.passage-card').length;
+        const expectedNext = document.querySelectorAll('.passage-tab').length - 1;
 
         btnPrev.click();
         await new Promise(r => setTimeout(r, 600));
-        const day3Cards = document.querySelectorAll('.passage-card').length;
+        const dayCardsPrev = document.querySelectorAll('.passage-card').length;
+        const expectedPrev = document.querySelectorAll('.passage-tab').length - 1;
 
-        return { day4Cards, day3Cards };
+        return { dayCardsNext, expectedNext, dayCardsPrev, expectedPrev };
     })()
     """, 6)
     print("Testcase D result:", json.dumps(res_days, indent=2))
-    assert res_days['day4Cards'] == 4, f"Day 4 expected 4 cards, got {res_days['day4Cards']}"
-    assert res_days['day3Cards'] == 4, f"Day 3 expected 4 cards, got {res_days['day3Cards']}"
+    assert res_days['dayCardsNext'] == res_days['expectedNext'], f"Next day expected {res_days['expectedNext']} cards, got {res_days['dayCardsNext']}"
+    assert res_days['dayCardsPrev'] == res_days['expectedPrev'], f"Prev day expected {res_days['expectedPrev']} cards, got {res_days['dayCardsPrev']}"
     print("Testcase D PASSED: Day navigation does not duplicate passages.")
 
     # 7. Test Testcase E: Check that individual verse items are unique in the DOM

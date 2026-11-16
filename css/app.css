@@ -280,8 +280,8 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Bottom Navigation Bar */
@@ -1203,20 +1203,19 @@ html, body {
 
 /* Completion Banner at Bottom */
 .devotion-complete-section {
-  position: sticky;
-  bottom: 74px;
-  margin-top: 24px;
+  position: static;
+  margin-top: 20px;
   margin-bottom: 24px;
-  z-index: 40;
+  z-index: 10;
 }
 
-/* Adjusted Complete Button when SOAP Journal is enabled (never covers Prayer section) */
+/* Adjusted Complete Button when SOAP Journal is enabled */
 .devotion-complete-section.soap-active,
 .soap-active .devotion-complete-section {
   position: static !important;
   bottom: auto !important;
-  margin-top: 24px !important;
-  margin-bottom: 36px !important;
+  margin-top: 20px !important;
+  margin-bottom: 24px !important;
   z-index: 10 !important;
   clear: both !important;
 }
@@ -2743,6 +2742,7 @@ input:checked + .slider:before {
 
   /* Transform devotion-notes-section into a floating Bottom Sheet on Mobile Portrait */
   .devotion-notes-section {
+    display: none;
     position: fixed;
     bottom: 0;
     left: 50%;
@@ -2765,15 +2765,16 @@ input:checked + .slider:before {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.28s;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     box-sizing: border-box;
   }
 
   .devotion-notes-section.sheet-open {
-    transform: translate(-50%, 0);
-    opacity: 1;
-    pointer-events: auto;
-    visibility: visible;
+    display: block !important;
+    transform: translate(-50%, 0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
   }
 
   .journal-sheet-handle {
@@ -3108,8 +3109,19 @@ input:checked + .slider:before {
   }
 
   .devotion-notes-section {
-    margin-top: 0;
-    margin-bottom: 16px;
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border-radius: var(--radius-lg) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    padding: 18px !important;
   }
 
   .notes-textarea {
