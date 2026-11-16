@@ -228,10 +228,12 @@
     el.btnAddDevotionTag = document.getElementById('btn-add-devotion-tag');
     el.devotionTagSuggestions = document.getElementById('devotion-tag-suggestions');
 
-    // Floating Journal Notepad Sheet Elements (Mobile Portrait)
+    // Floating Journal Notepad Sheet Elements
+    el.modalDevotionJournal = document.getElementById('modal-devotion-journal');
     el.devotionNotesSection = document.getElementById('devotion-notes-section');
     el.btnFloatingNotepad = document.getElementById('btn-floating-notepad');
-    el.devotionJournalBackdrop = document.getElementById('devotion-journal-backdrop');
+    el.btnOpenJournalCompanion = document.getElementById('btn-open-journal-companion');
+    el.devotionJournalBackdrop = document.getElementById('modal-devotion-journal');
     el.btnCloseJournalSheet = document.getElementById('btn-close-journal-sheet');
     el.btnDoneJournalSheet = document.getElementById('btn-done-journal-sheet');
     el.notepadHasNotesBadge = document.getElementById('notepad-has-notes-badge');
@@ -1074,9 +1076,12 @@
   }
 
   function openJournalSheet() {
-    if (!el.devotionNotesSection) return;
-    el.devotionNotesSection.classList.add('sheet-open');
-    if (el.devotionJournalBackdrop) el.devotionJournalBackdrop.style.display = 'block';
+    if (el.modalDevotionJournal) {
+      el.modalDevotionJournal.classList.add('active');
+    }
+    if (el.devotionNotesSection) {
+      el.devotionNotesSection.classList.add('sheet-open');
+    }
 
     if (!state.isCurrentDayLocked) {
       setTimeout(() => {
@@ -1091,8 +1096,12 @@
 
   function closeJournalSheet() {
     flushNotesSave();
-    if (el.devotionNotesSection) el.devotionNotesSection.classList.remove('sheet-open');
-    if (el.devotionJournalBackdrop) el.devotionJournalBackdrop.style.display = 'none';
+    if (el.modalDevotionJournal) {
+      el.modalDevotionJournal.classList.remove('active');
+    }
+    if (el.devotionNotesSection) {
+      el.devotionNotesSection.classList.remove('sheet-open');
+    }
     updateNotepadBadge();
   }
 
@@ -1102,6 +1111,12 @@
     el.navItems.forEach(btn => {
       btn.addEventListener('click', () => {
         const view = btn.dataset.nav;
+        if (view === 'journal' && state.activeView === 'devotion') {
+          if (!el.modalDevotionJournal || !el.modalDevotionJournal.classList.contains('active')) {
+            openJournalSheet();
+            return;
+          }
+        }
         switchView(view);
       });
     });
@@ -1188,9 +1203,12 @@
       });
     }
 
-    // Floating Journal Sheet triggers (Mobile Portrait)
+    // Floating Journal Sheet triggers
     if (el.btnFloatingNotepad) {
       el.btnFloatingNotepad.addEventListener('click', openJournalSheet);
+    }
+    if (el.btnOpenJournalCompanion) {
+      el.btnOpenJournalCompanion.addEventListener('click', openJournalSheet);
     }
     if (el.btnCloseJournalSheet) {
       el.btnCloseJournalSheet.addEventListener('click', closeJournalSheet);
@@ -1198,12 +1216,18 @@
     if (el.btnDoneJournalSheet) {
       el.btnDoneJournalSheet.addEventListener('click', closeJournalSheet);
     }
-    if (el.devotionJournalBackdrop) {
-      el.devotionJournalBackdrop.addEventListener('click', closeJournalSheet);
+    if (el.modalDevotionJournal) {
+      el.modalDevotionJournal.addEventListener('click', (e) => {
+        if (e.target === el.modalDevotionJournal) {
+          closeJournalSheet();
+        }
+      });
     }
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && el.devotionNotesSection && el.devotionNotesSection.classList.contains('sheet-open')) {
-        closeJournalSheet();
+      if (e.key === 'Escape') {
+        if (el.modalDevotionJournal && el.modalDevotionJournal.classList.contains('active')) {
+          closeJournalSheet();
+        }
       }
     });
 

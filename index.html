@@ -299,145 +299,18 @@
 
           <!-- Sticky Devotional Companion Column (Notes, Photo & Completion) -->
           <div class="devotion-study-col">
-            <!-- Journal Notes & Reflection Section (Requirement 11) -->
-            <div class="devotion-notes-section" id="devotion-notes-section">
-              <!-- Sheet Handle for Mobile Portrait Floating Sheet -->
-              <div class="journal-sheet-handle" id="journal-sheet-handle"></div>
-
-              <div class="notes-header">
-                <div class="notes-title">
-                  <span>✍️</span> <span id="devotion-notes-header-text">My Notes & Reflection</span>
-                  <button class="tool-btn" id="btn-toggle-soap-devotion" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 8px;" title="Toggle S.O.A.P. Journal Format">SOAP: Off</button>
+            <!-- Devotion Study Companion Card (Desktop & Tablet Study Column) -->
+            <div class="devotion-companion-card" id="devotion-companion-card">
+              <div class="companion-card-header">
+                <div class="companion-card-title">
+                  <span>✍️</span> <span>Today's Journal & Notes</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="journal-lock-badge" id="journal-lock-badge" style="display: none;" title="Journal reflections are locked because this day is marked as complete">🔒 Locked</span>
-                  <div class="notes-autosave-badge" id="notes-save-badge">
-                    <span>✓</span> Auto-saved
-                  </div>
-                  <!-- Close Button for Mobile Portrait Floating Sheet -->
-                  <button class="sheet-close-btn journal-sheet-close-btn" id="btn-close-journal-sheet" title="Close Notes">✕</button>
-                </div>
+                <span class="companion-status-badge" id="companion-status-badge">Private</span>
               </div>
-
-              <!-- Locked Notice Banner (shown when devotion completed) -->
-              <div class="journal-locked-notice" id="journal-locked-notice" style="display: none;">
-                <span>🔒</span> <span><strong>Journal Locked:</strong> This day is marked as complete. To edit your reflections or change photos, tap <em>Mark as Incomplete</em> below.</span>
-              </div>
-
-              <!-- Standard Freeform Notes Container -->
-              <div id="notes-standard-wrap">
-                <textarea 
-                  class="notes-textarea" 
-                  id="devotion-notes-input" 
-                  placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
-              </div>
-
-              <!-- S.O.A.P. Journal Format Container -->
-              <div id="notes-soap-wrap" style="display: none;">
-                <!-- S • SCRIPTURE -->
-                <div class="soap-card soap-card-s">
-                  <div class="soap-card-header">
-                    <span class="soap-letter-badge soap-letter-s">S</span>
-                    <div class="soap-card-title-group">
-                      <span class="soap-card-label">SCRIPTURE</span>
-                      <span class="soap-card-sublabel">Today’s Recommended Reading</span>
-                    </div>
-                  </div>
-                  <textarea 
-                    class="soap-textarea" 
-                    id="soap-scripture-input" 
-                    placeholder="Auto-populated with recommended reading..." 
-                    rows="2"></textarea>
-                </div>
-
-                <!-- O • OBSERVATION -->
-                <div class="soap-card soap-card-o">
-                  <div class="soap-card-header">
-                    <span class="soap-letter-badge soap-letter-o">O</span>
-                    <div class="soap-card-title-group">
-                      <span class="soap-card-label">OBSERVATION</span>
-                      <span class="soap-card-sublabel">What do you think is God telling you with today's scriptures?</span>
-                    </div>
-                  </div>
-                  <textarea 
-                    class="soap-textarea" 
-                    id="soap-observation-input" 
-                    placeholder="What do you think is God telling you with today's scriptures?" 
-                    rows="3"></textarea>
-                </div>
-
-                <!-- A • APPLICATION -->
-                <div class="soap-card soap-card-a">
-                  <div class="soap-card-header">
-                    <span class="soap-letter-badge soap-letter-a">A</span>
-                    <div class="soap-card-title-group">
-                      <span class="soap-card-label">APPLICATION</span>
-                      <span class="soap-card-sublabel">How does today's scriptures apply to your life right now?</span>
-                    </div>
-                  </div>
-                  <textarea 
-                    class="soap-textarea" 
-                    id="soap-application-input" 
-                    placeholder="How does today's scriptures apply to your life right now?" 
-                    rows="3"></textarea>
-                </div>
-
-                <!-- P • PRAYER -->
-                <div class="soap-card soap-card-p">
-                  <div class="soap-card-header">
-                    <span class="soap-letter-badge soap-letter-p">P</span>
-                    <div class="soap-card-title-group">
-                      <span class="soap-card-label">PRAYER</span>
-                      <span class="soap-card-sublabel">Write your prayer for today's devotion.</span>
-                    </div>
-                  </div>
-                  <textarea 
-                    class="soap-textarea" 
-                    id="soap-prayer-input" 
-                    placeholder="Write your prayer for today's devotion." 
-                    rows="3"></textarea>
-                </div>
-              </div>
-
-              <!-- Devotion Tags Section -->
-              <div class="devotion-tags-section" id="devotion-tags-section">
-                <div class="devotion-tags-header">
-                  <div class="devotion-tags-title">
-                    <span>🏷️</span> Tags & Themes
-                  </div>
-                  <span class="tags-hint">Categorize this entry</span>
-                </div>
-                <div class="tags-chips-container" id="devotion-tags-chips">
-                  <!-- Tag chips dynamically rendered -->
-                </div>
-                <div class="tags-input-row">
-                  <span class="tags-input-hash">#</span>
-                  <input type="text" class="tags-input-field" id="devotion-tag-input" placeholder="Add tag (e.g. faith, peace, healing)..." maxlength="30" autocomplete="off">
-                  <button type="button" class="btn-add-tag" id="btn-add-devotion-tag" title="Add Tag">Add</button>
-                </div>
-                <div class="tag-suggestions" id="devotion-tag-suggestions" style="display: none;"></div>
-              </div>
-
-              <!-- Image Upload for Today (Requirement 11) -->
-              <div class="devotion-image-box">
-                <div class="devotion-image-header" style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photos / Reflection</span>
-                  <label class="image-upload-trigger" id="devotion-image-upload-label">
-                    <span>➕ Add Photos</span>
-                    <input type="file" id="devotion-image-file" accept="image/*" multiple style="display: none;">
-                  </label>
-                </div>
-                <div id="devotion-image-preview-container" style="display: none;">
-                  <div class="image-previews-grid" id="devotion-images-grid"></div>
-                </div>
-              </div>
-
-              <!-- Done Button for Mobile Portrait Sheet -->
-              <div class="journal-sheet-bottom-action">
-                <button class="btn-primary" id="btn-done-journal-sheet" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                  <span>✓</span> Done (Notes Auto-Saved)
-                </button>
-              </div>
+              <p class="companion-card-desc">Record your reflections, S.O.A.P. study, tags, or capture devotional photos for today.</p>
+              <button type="button" class="btn-primary" id="btn-open-journal-companion" style="width: 100%; justify-content: center; gap: 8px; font-weight: 700; padding: 11px 16px;">
+                <span>✍️</span> Open Journal & Notes
+              </button>
             </div>
 
             <!-- Bottom Mark as Complete Button (Requirement 3) -->
@@ -454,9 +327,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Backdrop overlay for mobile portrait floating journal sheet -->
-        <div class="modal-backdrop journal-sheet-backdrop" id="devotion-journal-backdrop" style="display: none;"></div>
 
         <!-- Floating Notepad Trigger Button on Devotion View (Portrait Mobile) -->
         <button class="floating-notepad-btn" id="btn-floating-notepad" title="Open Journal & Notes">
@@ -1188,6 +1058,149 @@
           </button>
           <button class="tool-btn btn-danger-action" id="btn-lightbox-delete" style="flex: 1; justify-content: center;">
             <span>🗑️</span> Delete Photo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Devotion Journal Modal / Bottom Sheet -->
+    <div class="modal-backdrop" id="modal-devotion-journal">
+      <div class="modal-sheet devotion-journal-sheet devotion-notes-section" id="devotion-notes-section">
+        <!-- Sheet Handle for Mobile Portrait Floating Sheet -->
+        <div class="sheet-handle" id="journal-sheet-handle"></div>
+
+        <div class="notes-header">
+          <div class="notes-title">
+            <span>✍️</span> <span id="devotion-notes-header-text">My Notes & Reflection</span>
+            <button class="tool-btn" id="btn-toggle-soap-devotion" style="font-size: 0.72rem; padding: 2px 8px; margin-left: 8px;" title="Toggle S.O.A.P. Journal Format">SOAP: Off</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="journal-lock-badge" id="journal-lock-badge" style="display: none;" title="Journal reflections are locked because this day is marked as complete">🔒 Locked</span>
+            <div class="notes-autosave-badge" id="notes-save-badge">
+              <span>✓</span> Auto-saved
+            </div>
+            <!-- Close Button -->
+            <button class="sheet-close-btn journal-sheet-close-btn" id="btn-close-journal-sheet" title="Close Notes">✕</button>
+          </div>
+        </div>
+
+        <!-- Locked Notice Banner (shown when devotion completed) -->
+        <div class="journal-locked-notice" id="journal-locked-notice" style="display: none;">
+          <span>🔒</span> <span><strong>Journal Locked:</strong> This day is marked as complete. To edit your reflections or change photos, tap <em>Mark as Incomplete</em> below.</span>
+        </div>
+
+        <!-- Standard Freeform Notes Container -->
+        <div id="notes-standard-wrap">
+          <textarea 
+            class="notes-textarea" 
+            id="devotion-notes-input" 
+            placeholder="What is God speaking to you today? Key takeaways, prayers, and personal reflections..."></textarea>
+        </div>
+
+        <!-- S.O.A.P. Journal Format Container -->
+        <div id="notes-soap-wrap" style="display: none;">
+          <!-- S • SCRIPTURE -->
+          <div class="soap-card soap-card-s">
+            <div class="soap-card-header">
+              <span class="soap-letter-badge soap-letter-s">S</span>
+              <div class="soap-card-title-group">
+                <span class="soap-card-label">SCRIPTURE</span>
+                <span class="soap-card-sublabel">Today’s Recommended Reading</span>
+              </div>
+            </div>
+            <textarea 
+              class="soap-textarea" 
+              id="soap-scripture-input" 
+              placeholder="Auto-populated with recommended reading..." 
+              rows="2"></textarea>
+          </div>
+
+          <!-- O • OBSERVATION -->
+          <div class="soap-card soap-card-o">
+            <div class="soap-card-header">
+              <span class="soap-letter-badge soap-letter-o">O</span>
+              <div class="soap-card-title-group">
+                <span class="soap-card-label">OBSERVATION</span>
+                <span class="soap-card-sublabel">What do you think is God telling you with today's scriptures?</span>
+              </div>
+            </div>
+            <textarea 
+              class="soap-textarea" 
+              id="soap-observation-input" 
+              placeholder="What do you think is God telling you with today's scriptures?" 
+              rows="3"></textarea>
+          </div>
+
+          <!-- A • APPLICATION -->
+          <div class="soap-card soap-card-a">
+            <div class="soap-card-header">
+              <span class="soap-letter-badge soap-letter-a">A</span>
+              <div class="soap-card-title-group">
+                <span class="soap-card-label">APPLICATION</span>
+                <span class="soap-card-sublabel">How does today's scriptures apply to your life right now?</span>
+              </div>
+            </div>
+            <textarea 
+              class="soap-textarea" 
+              id="soap-application-input" 
+              placeholder="How does today's scriptures apply to your life right now?" 
+              rows="3"></textarea>
+          </div>
+
+          <!-- P • PRAYER -->
+          <div class="soap-card soap-card-p">
+            <div class="soap-card-header">
+              <span class="soap-letter-badge soap-letter-p">P</span>
+              <div class="soap-card-title-group">
+                <span class="soap-card-label">PRAYER</span>
+                <span class="soap-card-sublabel">Write your prayer for today's devotion.</span>
+              </div>
+            </div>
+            <textarea 
+              class="soap-textarea" 
+              id="soap-prayer-input" 
+              placeholder="Write your prayer for today's devotion." 
+              rows="3"></textarea>
+          </div>
+        </div>
+
+        <!-- Devotion Tags Section -->
+        <div class="devotion-tags-section" id="devotion-tags-section">
+          <div class="devotion-tags-header">
+            <div class="devotion-tags-title">
+              <span>🏷️</span> Tags & Themes
+            </div>
+            <span class="tags-hint">Categorize this entry</span>
+          </div>
+          <div class="tags-chips-container" id="devotion-tags-chips">
+            <!-- Tag chips dynamically rendered -->
+          </div>
+          <div class="tags-input-row">
+            <span class="tags-input-hash">#</span>
+            <input type="text" class="tags-input-field" id="devotion-tag-input" placeholder="Add tag (e.g. faith, peace, healing)..." maxlength="30" autocomplete="off">
+            <button type="button" class="btn-add-tag" id="btn-add-devotion-tag" title="Add Tag">Add</button>
+          </div>
+          <div class="tag-suggestions" id="devotion-tag-suggestions" style="display: none;"></div>
+        </div>
+
+        <!-- Image Upload for Today (Requirement 11) -->
+        <div class="devotion-image-box">
+          <div class="devotion-image-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photos / Reflection</span>
+            <label class="image-upload-trigger" id="devotion-image-upload-label">
+              <span>➕ Add Photos</span>
+              <input type="file" id="devotion-image-file" accept="image/*" multiple style="display: none;">
+            </label>
+          </div>
+          <div id="devotion-image-preview-container" style="display: none;">
+            <div class="image-previews-grid" id="devotion-images-grid"></div>
+          </div>
+        </div>
+
+        <!-- Done Button for Floating Sheet -->
+        <div class="journal-sheet-bottom-action">
+          <button class="btn-primary" id="btn-done-journal-sheet" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>✓</span> Done (Notes Auto-Saved)
           </button>
         </div>
       </div>
