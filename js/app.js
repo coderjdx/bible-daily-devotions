@@ -1282,6 +1282,7 @@
         journalCategoryBtns.forEach(c => {
           if (c.btn) c.btn.classList.toggle('active', c.cat === cat);
         });
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         state.selectedTagFilter = null;
         renderJournal();
       });
