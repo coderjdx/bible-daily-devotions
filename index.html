@@ -420,18 +420,15 @@
 
               <!-- Image Upload for Today (Requirement 11) -->
               <div class="devotion-image-box">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photo / Reflection</span>
-                  <label class="image-upload-trigger">
-                    <span>➕ Add Photo</span>
-                    <input type="file" id="devotion-image-file" accept="image/*" style="display: none;">
+                <div class="devotion-image-header" style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Devotional Photos / Reflection</span>
+                  <label class="image-upload-trigger" id="devotion-image-upload-label">
+                    <span>➕ Add Photos</span>
+                    <input type="file" id="devotion-image-file" accept="image/*" multiple style="display: none;">
                   </label>
                 </div>
                 <div id="devotion-image-preview-container" style="display: none;">
-                  <div class="image-preview-wrap">
-                    <img id="devotion-image-preview" src="" alt="Devotional image" class="image-preview-img">
-                    <button class="image-remove-btn" id="btn-remove-image" title="Remove Photo">✕</button>
-                  </div>
+                  <div class="image-previews-grid" id="devotion-images-grid"></div>
                 </div>
               </div>
 
@@ -1270,6 +1267,20 @@
               <button type="button" class="btn-add-tag" id="btn-add-sunday-tag" title="Add Tag">Add</button>
             </div>
             <div class="tag-suggestions" id="sunday-tag-suggestions" style="display: none;"></div>
+          </div>
+
+          <!-- Sunday Service Photos Section -->
+          <div class="devotion-image-box sunday-image-box" style="margin-top: 14px;">
+            <div class="devotion-image-header" style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">📷 Service Photos / Bulletins</span>
+              <label class="image-upload-trigger" id="sunday-image-upload-label">
+                <span>➕ Add Photos</span>
+                <input type="file" id="sunday-image-file" accept="image/*" multiple style="display: none;">
+              </label>
+            </div>
+            <div id="sunday-image-preview-container" style="display: none;">
+              <div class="image-previews-grid" id="sunday-images-grid"></div>
+            </div>
           </div>
         </div>
 

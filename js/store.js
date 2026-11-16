@@ -283,13 +283,36 @@ class DevotionStore {
   }
 
   // --- Sunday Church Services ---
+  _normalizeSundayRecord(rec, dateStr) {
+    if (!rec) return null;
+    let images = [];
+    if (Array.isArray(rec.images)) {
+      images = rec.images.map((img, idx) => ({
+        id: img.id || `sunday_img_${rec.date || dateStr}_${idx}_${Date.now()}`,
+        dataUrl: img.dataUrl || '',
+        filename: img.filename || `sunday_photo_${idx + 1}.jpg`,
+        timestamp: img.timestamp || rec.updatedAt || new Date().toISOString()
+      })).filter(img => Boolean(img.dataUrl));
+    }
+    return {
+      date: rec.date || dateStr,
+      attended: Boolean(rec.attended),
+      title: (rec.title || '').trim(),
+      speaker: (rec.speaker || '').trim(),
+      notes: (rec.notes || '').trim(),
+      tags: Array.isArray(rec.tags) ? rec.tags : [],
+      images,
+      updatedAt: rec.updatedAt || new Date().toISOString()
+    };
+  }
+
   async getSundayService(dateStr) {
     try {
       const store = await this.getStore('sunday_services');
       if (store) {
         return new Promise((res) => {
           const req = store.get(dateStr);
-          req.onsuccess = () => res(req.result || null);
+          req.onsuccess = () => res(this._normalizeSundayRecord(req.result, dateStr));
           req.onerror = () => res(null);
         });
       }
@@ -297,11 +320,20 @@ class DevotionStore {
       console.warn('Fallback getSundayService', e);
     }
     const val = localStorage.getItem(`sunday_service_${dateStr}`);
-    return val ? JSON.parse(val) : null;
+    if (!val) return null;
+    try {
+      return this._normalizeSundayRecord(JSON.parse(val), dateStr);
+    } catch (e) {
+      return null;
+    }
   }
 
   async saveSundayService(dateStr, data) {
     const updatedAt = new Date().toISOString();
+    let images = [];
+    if (Array.isArray(data.images)) {
+      images = data.images.filter(img => img && img.dataUrl);
+    }
     const record = {
       date: dateStr,
       attended: Boolean(data.attended),
@@ -309,6 +341,7 @@ class DevotionStore {
       speaker: (data.speaker || '').trim(),
       notes: (data.notes || '').trim(),
       tags: Array.isArray(data.tags) ? data.tags : [],
+      images,
       updatedAt
     };
     try {
@@ -324,6 +357,39 @@ class DevotionStore {
       console.warn('Fallback saveSundayService', e);
     }
     localStorage.setItem(`sunday_service_${dateStr}`, JSON.stringify(record));
+    return true;
+  }
+
+  async addSundayServiceImage(dateStr, dataUrl, filename) {
+    let rec = await this.getSundayService(dateStr);
+    if (!rec) {
+      rec = {
+        date: dateStr,
+        attended: true,
+        title: '',
+        speaker: '',
+        notes: '',
+        tags: [],
+        images: []
+      };
+    }
+    const images = Array.isArray(rec.images) ? [...rec.images] : [];
+    images.push({
+      id: `sunday_img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      dataUrl,
+      filename: filename || `sunday_photo_${images.length + 1}.jpg`,
+      timestamp: new Date().toISOString()
+    });
+    rec.images = images;
+    await this.saveSundayService(dateStr, rec);
+    return rec;
+  }
+
+  async removeSundayServiceImage(dateStr, imageId) {
+    const rec = await this.getSundayService(dateStr);
+    if (!rec) return true;
+    rec.images = (rec.images || []).filter(img => img.id !== imageId);
+    await this.saveSundayService(dateStr, rec);
     return true;
   }
 
@@ -346,24 +412,30 @@ class DevotionStore {
   }
 
   async getAllSundayServices() {
+    let list = [];
     try {
       const store = await this.getStore('sunday_services');
       if (store) {
-        return new Promise((res) => {
+        list = await new Promise((res) => {
           const req = store.getAll();
-          req.onsuccess = () => res(req.result || []);
+          req.onsuccess = () => {
+            const raw = req.result || [];
+            res(raw.map(r => this._normalizeSundayRecord(r, r.date)).filter(Boolean));
+          };
           req.onerror = () => res([]);
         });
+        return list;
       }
     } catch (e) {
       console.warn('Fallback getAllSundayServices', e);
     }
-    const list = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('sunday_service_')) {
         try {
-          list.push(JSON.parse(localStorage.getItem(key)));
+          const parsed = JSON.parse(localStorage.getItem(key));
+          const norm = this._normalizeSundayRecord(parsed, key.replace('sunday_service_', ''));
+          if (norm) list.push(norm);
         } catch (e) {}
       }
     }
@@ -503,13 +575,41 @@ class DevotionStore {
   }
 
   // --- Images ---
+  _normalizeImageRecord(rec, dateStr) {
+    if (!rec) return null;
+    let images = [];
+    if (Array.isArray(rec.images) && rec.images.length > 0) {
+      images = rec.images.map((img, idx) => ({
+        id: img.id || `img_${rec.date || dateStr}_${idx}_${Date.now()}`,
+        dataUrl: img.dataUrl || '',
+        filename: img.filename || `photo_${idx + 1}.jpg`,
+        timestamp: img.timestamp || rec.timestamp || new Date().toISOString()
+      })).filter(img => Boolean(img.dataUrl));
+    } else if (rec.dataUrl) {
+      images = [{
+        id: `img_${rec.date || dateStr}_legacy`,
+        dataUrl: rec.dataUrl,
+        filename: rec.filename || `devotion_${rec.date || dateStr}.jpg`,
+        timestamp: rec.timestamp || new Date().toISOString()
+      }];
+    }
+    if (images.length === 0) return null;
+    return {
+      date: rec.date || dateStr,
+      images,
+      dataUrl: images[0]?.dataUrl || '',
+      filename: images[0]?.filename || '',
+      timestamp: images[0]?.timestamp || rec.timestamp || new Date().toISOString()
+    };
+  }
+
   async getImage(dateStr) {
     try {
       const store = await this.getStore('images');
       if (store) {
         return new Promise((res) => {
           const req = store.get(dateStr);
-          req.onsuccess = () => res(req.result || null);
+          req.onsuccess = () => res(this._normalizeImageRecord(req.result, dateStr));
           req.onerror = () => res(null);
         });
       }
@@ -517,33 +617,88 @@ class DevotionStore {
       console.warn('Fallback getImage', e);
     }
     const val = localStorage.getItem(`img_${dateStr}`);
-    return val ? JSON.parse(val) : null;
+    if (!val) return null;
+    try {
+      return this._normalizeImageRecord(JSON.parse(val), dateStr);
+    } catch (e) {
+      return null;
+    }
   }
 
   async saveImage(dateStr, dataUrl, filename) {
-    const record = {
-      date: dateStr,
+    return this.addImage(dateStr, dataUrl, filename);
+  }
+
+  async addImage(dateStr, dataUrl, filename) {
+    const existing = await this.getImage(dateStr);
+    const images = (existing && Array.isArray(existing.images)) ? [...existing.images] : [];
+    const newImage = {
+      id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
       dataUrl,
-      filename: filename || `devotion_${dateStr}.jpg`,
+      filename: filename || `devotion_${dateStr}_${images.length + 1}.jpg`,
       timestamp: new Date().toISOString()
     };
+    images.push(newImage);
+
+    const record = {
+      date: dateStr,
+      images,
+      dataUrl: images[0].dataUrl,
+      filename: images[0].filename,
+      timestamp: newImage.timestamp
+    };
+
     try {
       const store = await this.getStore('images', 'readwrite');
       if (store) {
         return new Promise((res, rej) => {
           const req = store.put(record);
-          req.onsuccess = () => res(true);
+          req.onsuccess = () => res(record);
           req.onerror = (e) => rej(e);
         });
       }
     } catch (e) {
-      console.warn('Fallback saveImage', e);
+      console.warn('Fallback addImage', e);
     }
     try {
       localStorage.setItem(`img_${dateStr}`, JSON.stringify(record));
     } catch (err) {
       console.warn('Image too large for localStorage fallback');
     }
+    return record;
+  }
+
+  async removeDayImage(dateStr, imageId) {
+    const existing = await this.getImage(dateStr);
+    if (!existing || !existing.images || existing.images.length === 0) {
+      return this.removeImage(dateStr);
+    }
+    const filtered = existing.images.filter(img => img.id !== imageId);
+    if (filtered.length === 0) {
+      return this.removeImage(dateStr);
+    }
+    const record = {
+      date: dateStr,
+      images: filtered,
+      dataUrl: filtered[0].dataUrl,
+      filename: filtered[0].filename,
+      timestamp: new Date().toISOString()
+    };
+    try {
+      const store = await this.getStore('images', 'readwrite');
+      if (store) {
+        await new Promise((res, rej) => {
+          const req = store.put(record);
+          req.onsuccess = () => res(true);
+          req.onerror = (e) => rej(e);
+        });
+      }
+    } catch (e) {
+      console.warn('Fallback removeDayImage', e);
+    }
+    try {
+      localStorage.setItem(`img_${dateStr}`, JSON.stringify(record));
+    } catch (err) {}
     return true;
   }
 
@@ -571,23 +726,31 @@ class DevotionStore {
   }
 
   async getAllImages() {
+    let list = [];
     try {
       const store = await this.getStore('images');
       if (store) {
-        return new Promise((res) => {
+        list = await new Promise((res) => {
           const req = store.getAll();
-          req.onsuccess = () => res(req.result || []);
+          req.onsuccess = () => {
+            const raw = req.result || [];
+            res(raw.map(r => this._normalizeImageRecord(r, r.date)).filter(Boolean));
+          };
           req.onerror = () => res([]);
         });
+        return list;
       }
     } catch (e) {
       console.warn('Fallback getAllImages', e);
     }
-    const list = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('img_')) {
-        list.push(JSON.parse(localStorage.getItem(key)));
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          const norm = this._normalizeImageRecord(parsed, key.replace('img_', ''));
+          if (norm) list.push(norm);
+        } catch (e) {}
       }
     }
     return list;
@@ -812,6 +975,21 @@ class DevotionStore {
       }
     } catch (e) {
       console.warn('deleteImages error', e);
+    }
+
+    // Also clear images from Sunday services in scope
+    try {
+      const services = await this.getAllSundayServices();
+      for (const s of services) {
+        if (!scopeMonth || (s.date && s.date.startsWith(scopeMonth))) {
+          if (Array.isArray(s.images) && s.images.length > 0) {
+            s.images = [];
+            await this.saveSundayService(s.date, s);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('deleteImages from sunday_services error', e);
     }
 
     for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -1039,6 +1217,7 @@ class DevotionStore {
     const allCompletions = await this.getAllCompletions();
     const allNotes = await this.getAllNotes();
     const allImages = await this.getAllImages();
+    const allSundayServices = await this.getAllSundayServices();
     const allHighlights = await this.getAllHighlights();
     const offlineChapters = await this.countOfflineChapters();
     const ttsAudioCount = await this.countTTSAudio(scopeMonth);
@@ -1052,10 +1231,20 @@ class DevotionStore {
     const notes = filterMonth(allNotes).filter(n => n.note && n.note.trim().length > 0);
     const images = filterMonth(allImages);
 
+    let totalPhotosCount = 0;
+    images.forEach(rec => {
+      totalPhotosCount += (rec.images ? rec.images.length : (rec.dataUrl ? 1 : 0));
+    });
+    filterMonth(allSundayServices).forEach(rec => {
+      if (Array.isArray(rec.images)) {
+        totalPhotosCount += rec.images.length;
+      }
+    });
+
     return {
       completionsCount: completions.length,
       notesCount: notes.length,
-      imagesCount: images.length,
+      imagesCount: totalPhotosCount,
       highlightsCount: allHighlights.length,
       offlineChaptersCount: offlineChapters,
       ttsAudioCount: ttsAudioCount
@@ -1124,8 +1313,16 @@ class DevotionStore {
     // 4. Import images
     if (Array.isArray(imported.images)) {
       for (const img of imported.images) {
-        if (img.date && img.dataUrl) {
-          await this.saveImage(img.date, img.dataUrl, img.filename);
+        if (img.date) {
+          if (Array.isArray(img.images) && img.images.length > 0) {
+            for (const item of img.images) {
+              if (item && item.dataUrl) {
+                await this.addImage(img.date, item.dataUrl, item.filename);
+              }
+            }
+          } else if (img.dataUrl) {
+            await this.addImage(img.date, img.dataUrl, img.filename);
+          }
         }
       }
     }

@@ -66,7 +66,7 @@ def run_tests():
         const cards = Array.from(document.querySelectorAll('.passage-card'));
         const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
         const verseCount = document.querySelectorAll('.verse-item').length;
-        const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
+        const expectedCount = window.bibleService.getDaySchedule(window.appState ? window.appState.currentDay : 3).passages.length;
         
         return {
             cardCount: cards.length,
@@ -94,7 +94,7 @@ def run_tests():
 
         const cards = Array.from(document.querySelectorAll('.passage-card'));
         const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
-        const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
+        const expectedCount = window.bibleService.getDaySchedule(window.appState ? window.appState.currentDay : 3).passages.length;
         return {
             cardCount: cards.length,
             expectedCount: expectedCount,
@@ -124,7 +124,7 @@ def run_tests():
 
             const cards = Array.from(document.querySelectorAll('.passage-card'));
             const headers = cards.map(c => c.querySelector('.passage-reference') ? c.querySelector('.passage-reference').innerText.trim() : '');
-            const expectedCount = window.bibleService.getDaySchedule(window.state ? window.state.currentDay : 3).passages.length;
+            const expectedCount = window.bibleService.getDaySchedule(window.appState ? window.appState.currentDay : 3).passages.length;
             return {{
                 fromView: '{v}',
                 cardCount: cards.length,

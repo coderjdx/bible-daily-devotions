@@ -217,6 +217,8 @@
     el.devotionImageFile = document.getElementById('devotion-image-file');
     el.devotionImagePreview = document.getElementById('devotion-image-preview');
     el.devotionImagePreviewContainer = document.getElementById('devotion-image-preview-container');
+    el.devotionImagesGrid = document.getElementById('devotion-images-grid');
+    el.devotionImageUploadLabel = document.getElementById('devotion-image-upload-label');
     el.btnRemoveImage = document.getElementById('btn-remove-image');
 
     // Devotion Tags
@@ -329,6 +331,10 @@
     el.sundayTagSuggestions = document.getElementById('sunday-tag-suggestions');
     el.btnDoneSundayModal = document.getElementById('btn-done-sunday-modal');
     el.btnDeleteSundayModal = document.getElementById('btn-delete-sunday-modal');
+    el.sundayImageFile = document.getElementById('sunday-image-file');
+    el.sundayImagePreviewContainer = document.getElementById('sunday-image-preview-container');
+    el.sundayImagesGrid = document.getElementById('sunday-images-grid');
+    el.sundayImageUploadLabel = document.getElementById('sunday-image-upload-label');
 
     // Settings View - Alarms & Notifications
     el.settingsSnoozeCard = document.getElementById('settings-snooze-card');
@@ -1008,12 +1014,13 @@
     if (el.sundayNotesInput) el.sundayNotesInput.value = (rec && rec.notes) || '';
     state.sundayTags = (rec && Array.isArray(rec.tags)) ? [...rec.tags] : [];
 
-    const hasData = Boolean(rec && (rec.attended || rec.title || rec.speaker || rec.notes || (rec.tags && rec.tags.length)));
+    const hasData = Boolean(rec && (rec.attended || rec.title || rec.speaker || rec.notes || (rec.tags && rec.tags.length) || (rec.images && rec.images.length)));
     if (el.btnDeleteSundayModal) {
       el.btnDeleteSundayModal.style.display = hasData ? 'inline-flex' : 'none';
     }
 
     renderSundayTagsUI();
+    await renderSundayServiceImagesUI(activeSundayDateStr, rec);
     if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '';
   }
 
@@ -1031,7 +1038,9 @@
     const notes = el.sundayNotesInput ? el.sundayNotesInput.value.trim() : '';
     const tags = state.sundayTags || [];
 
-    const hasContent = Boolean(attended || title || speaker || notes || tags.length);
+    const existingRec = await window.devotionStore.getSundayService(activeSundayDateStr);
+    const images = (existingRec && Array.isArray(existingRec.images)) ? existingRec.images : [];
+    const hasContent = Boolean(attended || title || speaker || notes || tags.length || images.length);
 
     if (!hasContent) {
       await window.devotionStore.deleteSundayService(activeSundayDateStr);
@@ -1043,7 +1052,8 @@
         title,
         speaker,
         notes,
-        tags
+        tags,
+        images
       });
       if (el.btnDeleteSundayModal) el.btnDeleteSundayModal.style.display = 'inline-flex';
       if (el.sundaySaveBadge) el.sundaySaveBadge.innerHTML = '<span>✓</span> Auto-saved';
@@ -1217,8 +1227,15 @@
     }
 
     // Image Upload
-    el.devotionImageFile.addEventListener('change', handleImageUpload);
-    el.btnRemoveImage.addEventListener('click', handleImageRemove);
+    if (el.devotionImageFile) {
+      el.devotionImageFile.addEventListener('change', handleImageUpload);
+    }
+    if (el.btnRemoveImage) {
+      el.btnRemoveImage.addEventListener('click', handleImageRemove);
+    }
+    if (el.sundayImageFile) {
+      el.sundayImageFile.addEventListener('change', handleSundayImageUpload);
+    }
 
     // Completion Button (Requirement 3)
     el.btnMarkComplete.addEventListener('click', handleMarkComplete);
@@ -2297,12 +2314,16 @@
     if (el.devotionImageFile) {
       el.devotionImageFile.disabled = isLocked;
     }
-    const uploadTrigger = document.querySelector('.image-upload-trigger');
-    if (uploadTrigger) {
-      uploadTrigger.style.display = isLocked ? 'none' : 'inline-flex';
+    if (el.devotionImageUploadLabel) {
+      el.devotionImageUploadLabel.style.display = isLocked ? 'none' : 'inline-flex';
     }
     if (el.btnRemoveImage) {
       el.btnRemoveImage.style.display = isLocked ? 'none' : 'flex';
+    }
+    if (el.devotionImagesGrid) {
+      el.devotionImagesGrid.querySelectorAll('.image-thumb-remove-btn').forEach(btn => {
+        btn.style.display = isLocked ? 'none' : 'flex';
+      });
     }
 
     if (el.btnToggleSoapDevotion) {
@@ -2453,19 +2474,12 @@
       if (el.notesSaveBadge) el.notesSaveBadge.innerHTML = hasContent ? '<span>✓</span> Saved' : '';
     }
 
-    const savedImg = await window.devotionStore.getImage(dateStr);
-    if (savedImg && savedImg.dataUrl) {
-      el.devotionImagePreview.src = savedImg.dataUrl;
-      el.devotionImagePreviewContainer.style.display = 'block';
-    } else {
-      el.devotionImagePreview.src = '';
-      el.devotionImagePreviewContainer.style.display = 'none';
-    }
-
     // Render Completion State & Lock Journal Section if Completed
     const completion = await window.devotionStore.getCompletion(dateStr);
     const isCompleted = Boolean(completion && completion.completed);
     setJournalLockState(isCompleted);
+
+    await renderDevotionImagesUI(dateStr, isCompleted);
 
     if (isCompleted) {
       el.btnMarkComplete.style.display = 'none';
@@ -3029,29 +3043,103 @@
     showToast(`Font: ${state.fontFamily === 'serif' ? 'Serif (Charter/Merriweather)' : 'Sans-Serif (Modern)'}`);
   }
 
-  // --- Image Upload Handler ---
-  function handleImageUpload(e) {
-    if (state.isCurrentDayLocked) {
-      showToast('Journal is locked because this day is completed 🔒');
+  // --- Image Helpers & Handlers ---
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function renderDevotionImagesUI(dateStr, isLocked = false) {
+    if (!el.devotionImagesGrid || !el.devotionImagePreviewContainer) return;
+    const savedImgRec = await window.devotionStore.getImage(dateStr);
+    const images = (savedImgRec && Array.isArray(savedImgRec.images)) ? savedImgRec.images : [];
+
+    if (images.length === 0) {
+      el.devotionImagesGrid.innerHTML = '';
+      el.devotionImagePreviewContainer.style.display = 'none';
       return;
     }
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target.result;
-      const dateStr = getDayDateStr(state.currentDay);
+    el.devotionImagesGrid.innerHTML = '';
+    images.forEach((img) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'image-preview-thumb-wrap';
+      wrap.innerHTML = `
+        <img src="${img.dataUrl}" alt="${escapeHtml(img.filename || 'Devotion photo')}" class="image-preview-thumb-img">
+        ${isLocked ? '' : `<button type="button" class="image-thumb-remove-btn" data-img-id="${img.id}" title="Remove Photo">✕</button>`}
+      `;
 
-      // Downscale if very large
-      const compressedDataUrl = await compressImage(dataUrl, 1024, 0.85);
-      await window.devotionStore.saveImage(dateStr, compressedDataUrl, file.name);
+      const thumbImg = wrap.querySelector('.image-preview-thumb-img');
+      thumbImg.addEventListener('click', () => {
+        const { day, dateObj } = parseDateParts(dateStr);
+        const sched = window.bibleService.getDaySchedule(day);
+        openImageDetailPanel({
+          type: 'devotion',
+          day,
+          dateStr,
+          dateObj,
+          img: { dataUrl: img.dataUrl, filename: img.filename },
+          sched,
+          note: el.devotionNotesInput ? el.devotionNotesInput.value : ''
+        });
+      });
 
-      el.devotionImagePreview.src = compressedDataUrl;
-      el.devotionImagePreviewContainer.style.display = 'block';
-      showToast('Photo attached to devotion 📷');
-    };
-    reader.readAsDataURL(file);
+      const btnRemove = wrap.querySelector('.image-thumb-remove-btn');
+      if (btnRemove) {
+        btnRemove.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (state.isCurrentDayLocked) {
+            showToast('Journal is locked because this day is completed 🔒');
+            return;
+          }
+          await window.devotionStore.removeDayImage(dateStr, img.id);
+          showToast('Photo removed');
+          await renderDevotionImagesUI(dateStr, isLocked);
+          if (state.activeView === 'journal') renderJournal();
+        });
+      }
+
+      el.devotionImagesGrid.appendChild(wrap);
+    });
+
+    el.devotionImagePreviewContainer.style.display = 'block';
+  }
+
+  async function handleImageUpload(e) {
+    if (state.isCurrentDayLocked) {
+      showToast('Journal is locked because this day is completed 🔒');
+      if (el.devotionImageFile) el.devotionImageFile.value = '';
+      return;
+    }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const dateStr = getDayDateStr(state.currentDay);
+    let uploadedCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const compressedDataUrl = await compressImage(dataUrl, 1024, 0.85);
+        await window.devotionStore.addImage(dateStr, compressedDataUrl, file.name);
+        uploadedCount++;
+      } catch (err) {
+        console.warn('Failed to upload image', file.name, err);
+      }
+    }
+
+    if (el.devotionImageFile) el.devotionImageFile.value = '';
+    await renderDevotionImagesUI(dateStr, false);
+    if (uploadedCount > 0) {
+      showToast(uploadedCount === 1 ? 'Photo attached to devotion 📷' : `${uploadedCount} photos attached to devotion 📷`);
+    }
+    if (state.activeView === 'journal') renderJournal();
   }
 
   async function handleImageRemove(e) {
@@ -3065,10 +3153,93 @@
     }
     const dateStr = getDayDateStr(state.currentDay);
     await window.devotionStore.removeImage(dateStr);
-    el.devotionImagePreview.src = '';
-    el.devotionImagePreviewContainer.style.display = 'none';
-    el.devotionImageFile.value = '';
-    showToast('Photo removed');
+    if (el.devotionImagesGrid) el.devotionImagesGrid.innerHTML = '';
+    if (el.devotionImagePreviewContainer) el.devotionImagePreviewContainer.style.display = 'none';
+    if (el.devotionImageFile) el.devotionImageFile.value = '';
+    showToast('All photos removed');
+    if (state.activeView === 'journal') renderJournal();
+  }
+
+  // --- Sunday Church Service Image Handlers ---
+  async function renderSundayServiceImagesUI(dateStr, existingRec = null) {
+    if (!el.sundayImagesGrid || !el.sundayImagePreviewContainer) return;
+    const rec = existingRec || await window.devotionStore.getSundayService(dateStr);
+    const images = (rec && Array.isArray(rec.images)) ? rec.images : [];
+
+    if (images.length === 0) {
+      el.sundayImagesGrid.innerHTML = '';
+      el.sundayImagePreviewContainer.style.display = 'none';
+      return;
+    }
+
+    el.sundayImagesGrid.innerHTML = '';
+    images.forEach(img => {
+      const wrap = document.createElement('div');
+      wrap.className = 'image-preview-thumb-wrap';
+      wrap.innerHTML = `
+        <img src="${img.dataUrl}" alt="${escapeHtml(img.filename || 'Sunday service photo')}" class="image-preview-thumb-img">
+        <button type="button" class="image-thumb-remove-btn" data-img-id="${img.id}" title="Remove Photo">✕</button>
+      `;
+
+      const thumbImg = wrap.querySelector('.image-preview-thumb-img');
+      thumbImg.addEventListener('click', () => {
+        const { day, dateObj } = parseDateParts(dateStr);
+        openImageDetailPanel({
+          type: 'sunday',
+          day,
+          dateStr,
+          dateObj,
+          img: { dataUrl: img.dataUrl, filename: img.filename },
+          serviceRecord: rec,
+          note: rec ? rec.notes : ''
+        });
+      });
+
+      const btnRemove = wrap.querySelector('.image-thumb-remove-btn');
+      if (btnRemove) {
+        btnRemove.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          await window.devotionStore.removeSundayServiceImage(dateStr, img.id);
+          showToast('Service photo removed');
+          const updatedRec = await window.devotionStore.getSundayService(dateStr);
+          await renderSundayServiceImagesUI(dateStr, updatedRec);
+          if (state.activeView === 'journal') renderJournal();
+        });
+      }
+
+      el.sundayImagesGrid.appendChild(wrap);
+    });
+
+    el.sundayImagePreviewContainer.style.display = 'block';
+  }
+
+  async function handleSundayImageUpload(e) {
+    if (!activeSundayDateStr) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    let uploadedCount = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const compressed = await compressImage(dataUrl, 1024, 0.85);
+        await window.devotionStore.addSundayServiceImage(activeSundayDateStr, compressed, file.name);
+        uploadedCount++;
+      } catch (err) {
+        console.warn('Failed to upload sunday photo', file.name, err);
+      }
+    }
+
+    if (el.sundayImageFile) el.sundayImageFile.value = '';
+    const updatedRec = await window.devotionStore.getSundayService(activeSundayDateStr);
+    await renderSundayServiceImagesUI(activeSundayDateStr, updatedRec);
+    if (uploadedCount > 0) {
+      showToast(uploadedCount === 1 ? 'Photo attached to Sunday service 📷' : `${uploadedCount} photos attached to Sunday service 📷`);
+    }
+    if (el.btnDeleteSundayModal) el.btnDeleteSundayModal.style.display = 'inline-flex';
+    if (state.activeView === 'journal') renderJournal();
   }
 
   function compressImage(dataUrl, maxDim, quality) {
@@ -3270,9 +3441,10 @@
       if (el.journalTagsBarWrap) el.journalTagsBarWrap.style.display = 'none';
       const allImages = await window.devotionStore.getAllImages();
       const allNotes = await window.devotionStore.getAllNotes();
+      const allSundayServices = await window.devotionStore.getAllSundayServices();
       const imagesMap = new Map(allImages.map(img => [img.date, img]));
       const notesMap = new Map(allNotes.map(n => [n.date, n.note]));
-      renderJournalGallery(selectedMonth, imagesMap, notesMap, allImages);
+      renderJournalGallery(selectedMonth, imagesMap, notesMap, allImages, allSundayServices);
       return;
     }
 
@@ -3351,7 +3523,8 @@
           }
         }
 
-        if (hasValidNote || img || tags.length > 0) {
+        const hasImg = Boolean(img && ((img.images && img.images.length > 0) || img.dataUrl));
+        if (hasValidNote || hasImg || tags.length > 0) {
           candidateEntries.push({
             type: 'devotion',
             day,
@@ -3374,7 +3547,7 @@
         if (!s || !s.date) return;
         if (monthStr !== 'all' && !s.date.startsWith(monthStr)) return;
 
-        const hasContent = Boolean(s.attended || s.title || s.speaker || s.notes || (s.tags && s.tags.length));
+        const hasContent = Boolean(s.attended || s.title || s.speaker || s.notes || (s.tags && s.tags.length) || (s.images && s.images.length));
         if (hasContent) {
           const { day, dateObj } = parseDateParts(s.date);
           candidateEntries.push({
@@ -3505,6 +3678,16 @@
           `;
         }
 
+        const sImages = (item.serviceRecord && Array.isArray(item.serviceRecord.images)) ? item.serviceRecord.images : [];
+        if (sImages.length > 0) {
+          cardHtml += `
+            <div style="position: relative;">
+              <img src="${sImages[0].dataUrl}" alt="Sunday service photo" class="entry-thumbnail">
+              <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 ${sImages.length === 1 ? 'Attached' : `${sImages.length} Photos`}</span>
+            </div>
+          `;
+        }
+
         cardHtml += `
           <div class="entry-card-footer">
             <span class="entry-card-action-hint">Open service notes ↗</span>
@@ -3565,11 +3748,12 @@
           `;
         }
 
-        if (item.img && item.img.dataUrl) {
+        const dImages = item.img ? (Array.isArray(item.img.images) ? item.img.images : (item.img.dataUrl ? [item.img] : [])) : [];
+        if (dImages.length > 0) {
           cardHtml += `
             <div style="position: relative;">
-              <img src="${item.img.dataUrl}" alt="Devotion photo" class="entry-thumbnail">
-              <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 Attached</span>
+              <img src="${dImages[0].dataUrl}" alt="Devotion photo" class="entry-thumbnail">
+              <span style="position: absolute; bottom: 12px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">📷 ${dImages.length === 1 ? 'Attached' : `${dImages.length} Photos`}</span>
             </div>
           `;
         }
@@ -3591,7 +3775,7 @@
     });
   }
 
-  function renderJournalGallery(monthStr, imagesMap, notesMap, allImages) {
+  function renderJournalGallery(monthStr, imagesMap, notesMap, allImages, allSundayServices) {
     el.journalGalleryGrid.innerHTML = '';
 
     const photos = [];
@@ -3599,11 +3783,52 @@
       ? allImages
       : allImages.filter(img => img.date && img.date.startsWith(monthStr));
 
-    sourceImages.forEach(img => {
-      const { day, dateObj } = parseDateParts(img.date);
+    // 1. Devotion photos (multi-image support)
+    sourceImages.forEach(imgRec => {
+      const { day, dateObj } = parseDateParts(imgRec.date);
       const sched = window.bibleService.getDaySchedule(day);
-      const note = notesMap.get(img.date);
-      photos.push({ day, dateStr: img.date, dateObj, img, sched, note });
+      const note = notesMap.get(imgRec.date);
+      const imagesList = (Array.isArray(imgRec.images) && imgRec.images.length > 0)
+        ? imgRec.images
+        : (imgRec.dataUrl ? [{ id: `legacy_${imgRec.date}`, dataUrl: imgRec.dataUrl, filename: imgRec.filename }] : []);
+
+      imagesList.forEach((singleImg, idx) => {
+        photos.push({
+          type: 'devotion',
+          day,
+          dateStr: imgRec.date,
+          dateObj,
+          img: singleImg,
+          sched,
+          note: note || '',
+          photoIndex: idx,
+          totalInDay: imagesList.length
+        });
+      });
+    });
+
+    // 2. Sunday church service photos
+    const services = (monthStr === 'all')
+      ? (allSundayServices || [])
+      : (allSundayServices || []).filter(s => s.date && s.date.startsWith(monthStr));
+
+    services.forEach(s => {
+      if (Array.isArray(s.images) && s.images.length > 0) {
+        const { day, dateObj } = parseDateParts(s.date);
+        s.images.forEach((singleImg, idx) => {
+          photos.push({
+            type: 'sunday',
+            day,
+            dateStr: s.date,
+            dateObj,
+            img: singleImg,
+            serviceRecord: s,
+            note: s.notes || '',
+            photoIndex: idx,
+            totalInDay: s.images.length
+          });
+        });
+      }
     });
 
     if (photos.length === 0) {
@@ -3611,27 +3836,40 @@
         <div class="empty-state-box" style="grid-column: 1 / -1;">
           <div class="empty-state-icon">📷</div>
           <p>No photos uploaded ${monthStr === 'all' ? 'yet' : `for ${monthStr}`}.</p>
-          <p style="font-size: 0.8rem; margin-top: 6px;">Tap "+ Add Photo" in your daily devotion to attach photos and build your visual gallery!</p>
+          <p style="font-size: 0.8rem; margin-top: 6px;">Tap "+ Add Photos" in your daily devotion or Sunday church service to attach photos and build your visual gallery!</p>
         </div>
       `;
       return;
     }
 
-    // Sort descending by dateStr
-    photos.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+    // Sort descending by dateStr, then by photo index
+    photos.sort((a, b) => {
+      const cmp = b.dateStr.localeCompare(a.dateStr);
+      if (cmp !== 0) return cmp;
+      return (a.photoIndex || 0) - (b.photoIndex || 0);
+    });
 
     photos.forEach(item => {
       const tile = document.createElement('div');
       tile.className = 'gallery-tile';
 
       const dateText = item.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const bookTitle = item.sched ? item.sched.passages[0].bookName : 'Devotion';
+      let badgeLabel = '';
+      let scriptureLabel = '';
+
+      if (item.type === 'sunday') {
+        badgeLabel = `⛪ ${dateText} • Sunday Service`;
+        scriptureLabel = (item.serviceRecord && item.serviceRecord.title) ? item.serviceRecord.title : 'Church Service';
+      } else {
+        badgeLabel = `📅 ${dateText} • Day ${item.day}`;
+        scriptureLabel = item.sched ? item.sched.passages[0].bookName : 'Devotion';
+      }
 
       tile.innerHTML = `
-        <img src="${item.img.dataUrl}" alt="Devotion photo for Day ${item.day}">
+        <img src="${item.img.dataUrl}" alt="Photo for ${item.dateStr}">
         <div class="gallery-tile-caption">
-          <span class="gallery-tile-date">📅 ${dateText} • Day ${item.day}</span>
-          <span class="gallery-tile-scripture">${escapeHtml(bookTitle)}</span>
+          <span class="gallery-tile-date">${escapeHtml(badgeLabel)}</span>
+          <span class="gallery-tile-scripture">${escapeHtml(scriptureLabel)}</span>
         </div>
       `;
 
@@ -3881,11 +4119,18 @@
       `;
     }
 
-    if (item.img && item.img.dataUrl) {
+    const attachedPhotos = item.img ? (Array.isArray(item.img.images) && item.img.images.length > 0 ? item.img.images : (item.img.dataUrl ? [item.img] : [])) : [];
+    if (attachedPhotos.length > 0) {
       bodyHtml += `
         <div class="panel-attached-photo-wrap">
-          <div class="soap-section-badge">📷 Attached Devotional Photo</div>
-          <img src="${item.img.dataUrl}" alt="Devotion photo" class="panel-attached-img" id="panel-attached-img" title="Click to inspect full photo">
+          <div class="soap-section-badge">📷 Attached Devotional Photos (${attachedPhotos.length})</div>
+          <div class="panel-attached-photos-grid">
+            ${attachedPhotos.map((p, idx) => `
+              <div class="panel-attached-photo-item" data-photo-idx="${idx}">
+                <img src="${p.dataUrl}" alt="${escapeHtml(p.filename || 'Photo')}" title="Click to inspect photo in lightbox">
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
     }
@@ -3904,13 +4149,22 @@
     el.journalPanelBody.innerHTML = bodyHtml;
 
     // Click photo to open full image detail modal
-    const panelImg = el.journalPanelBody.querySelector('#panel-attached-img');
-    if (panelImg) {
-      panelImg.addEventListener('click', () => {
+    el.journalPanelBody.querySelectorAll('.panel-attached-photo-item').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const idx = parseInt(tile.dataset.photoIdx, 10) || 0;
+        const targetPhoto = attachedPhotos[idx] || attachedPhotos[0];
         closeJournalEntryModal();
-        openImageDetailPanel(item);
+        openImageDetailPanel({
+          type: 'devotion',
+          day: item.day,
+          dateStr: item.dateStr,
+          dateObj: item.dateObj,
+          img: targetPhoto,
+          sched: item.sched,
+          note: item.note
+        });
       });
-    }
+    });
 
     el.modalJournalEntry.classList.add('active');
   }
@@ -3927,28 +4181,46 @@
     const fullDateText = item.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
     el.lightboxImg.src = item.img.dataUrl;
-    el.lightboxDate.textContent = `📅 Day ${item.day} • ${fullDateText}`;
-    if (el.lightboxScripture) {
-      el.lightboxScripture.textContent = item.sched ? item.sched.scriptures : 'Daily Devotion';
-    }
 
-    // Show note snippet if available
-    if (item.note && item.note.trim()) {
-      const parsed = parseNoteData(item.note, item.sched ? item.sched.scriptures : '');
-      let snippet = '';
-      if (parsed.format === 'soap') {
-        snippet = parsed.observation || parsed.application || parsed.prayer || '';
-      } else {
-        snippet = parsed.text || '';
+    if (item.type === 'sunday') {
+      el.lightboxDate.textContent = `⛪ ${fullDateText} • Sunday Service`;
+      if (el.lightboxScripture) {
+        el.lightboxScripture.textContent = (item.serviceRecord && item.serviceRecord.title) ? item.serviceRecord.title : 'Sunday Church Service';
       }
-      if (snippet && snippet.trim()) {
-        el.lightboxCaption.innerHTML = `<span style="font-weight: 700; color: var(--accent-gold-light);">Reflection:</span> “${escapeHtml(snippet.slice(0, 160))}${snippet.length > 160 ? '...' : ''}”`;
+      const noteText = item.note || (item.serviceRecord ? item.serviceRecord.notes : '');
+      const speakerText = (item.serviceRecord && item.serviceRecord.speaker) ? `Speaker: ${item.serviceRecord.speaker}` : '';
+      if (noteText || speakerText) {
+        let snippet = speakerText ? `[${speakerText}] ` : '';
+        if (noteText) snippet += noteText;
+        el.lightboxCaption.innerHTML = `<span style="font-weight: 700; color: var(--accent-gold-light);">Sermon Notes:</span> “${escapeHtml(snippet.slice(0, 160))}${snippet.length > 160 ? '...' : ''}”`;
         el.lightboxCaption.style.display = 'block';
       } else {
         el.lightboxCaption.style.display = 'none';
       }
     } else {
-      el.lightboxCaption.style.display = 'none';
+      el.lightboxDate.textContent = `📅 Day ${item.day} • ${fullDateText}`;
+      if (el.lightboxScripture) {
+        el.lightboxScripture.textContent = item.sched ? item.sched.scriptures : 'Daily Devotion';
+      }
+
+      // Show note snippet if available
+      if (item.note && item.note.trim()) {
+        const parsed = parseNoteData(item.note, item.sched ? item.sched.scriptures : '');
+        let snippet = '';
+        if (parsed.format === 'soap') {
+          snippet = parsed.observation || parsed.application || parsed.prayer || '';
+        } else {
+          snippet = parsed.text || '';
+        }
+        if (snippet && snippet.trim()) {
+          el.lightboxCaption.innerHTML = `<span style="font-weight: 700; color: var(--accent-gold-light);">Reflection:</span> “${escapeHtml(snippet.slice(0, 160))}${snippet.length > 160 ? '...' : ''}”`;
+          el.lightboxCaption.style.display = 'block';
+        } else {
+          el.lightboxCaption.style.display = 'none';
+        }
+      } else {
+        el.lightboxCaption.style.display = 'none';
+      }
     }
 
     el.modalLightbox.classList.add('active');
